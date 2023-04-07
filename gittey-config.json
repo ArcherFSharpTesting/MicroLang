@@ -1,0 +1,48 @@
+{
+    "branchPrefix": {
+        "separator": "",
+        "validator": "",
+        "prefixes": {}
+    },
+    "commitPrefix": {
+        "separator": " ",
+        "validator": "^.{1,45}$",
+        "prefixes": {
+            "feat:": "Feature work",
+            "fix:": "Bug fix",
+            "refactor:": "Refactoring",
+            "test:": "Test",
+            "chore:": "Chore",
+            "docs:": "Documentation updated/added",
+            "style:": "Code style",
+            "build:": "Build",
+            "ci:": "CI configuration",
+            "perf:": "Performance improvement",
+            "holding": "Broken but storing it anyway"
+        }
+    },
+    "verboseMode": false,
+    "aliases": [
+        {
+            "name": "check",
+            "command": "cls; gittey build && dotnet run --project ./Tests"
+        },
+        {
+            "name": "test",
+            "command": "gittey check && gittey commit"
+        },
+        {
+            "name": "push",
+            "command": "gittey test && git push"
+        },
+        {
+            "name": "build",
+            "command": "dotnet build"
+        },
+        {
+            "name": "undo",
+            "command": "git reset . && git checkout . && git clean -xfd && gittey check"
+        }
+    ],
+    "collaborators": []
+}

@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MicroLang.Lib", "Lib\MicroLang.Lib.fsproj", "{DF6AA289-9135-48C3-9F4A-A50CA5557FFC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MicorLang.Tests", "Tests\MicorLang.Tests.fsproj", "{4E4E03B2-801D-431F-A731-6B6F0CCAAE6B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{4B9B1540-A96C-4402-9AFE-CD1627C4DCC2}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		gittey-config.json = gittey-config.json
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DF6AA289-9135-48C3-9F4A-A50CA5557FFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF6AA289-9135-48C3-9F4A-A50CA5557FFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF6AA289-9135-48C3-9F4A-A50CA5557FFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF6AA289-9135-48C3-9F4A-A50CA5557FFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E4E03B2-801D-431F-A731-6B6F0CCAAE6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E4E03B2-801D-431F-A731-6B6F0CCAAE6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E4E03B2-801D-431F-A731-6B6F0CCAAE6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E4E03B2-801D-431F-A731-6B6F0CCAAE6B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

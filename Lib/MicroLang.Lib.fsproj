@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Archer.MicroLang</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="TestLang.Types.fs" />
+    <Compile Include="TestLang.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.5" />
+  </ItemGroup>
+
+</Project>
