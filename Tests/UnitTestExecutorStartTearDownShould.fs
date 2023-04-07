@@ -1,6 +1,6 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor StartTearDown``
     
-open Archer.MicroLang.Lang
+open Archer.MicroLang
 
 let private container = suite.Container ("TestLibrary", "UnitTestExecutor StartTearDown should")
 

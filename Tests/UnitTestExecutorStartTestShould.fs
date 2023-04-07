@@ -1,6 +1,6 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor StartTest``
 
-open Archer.MicroLang.Lang
+open Archer.MicroLang
 
 let private container = suite.Container ("TestingLibrary", "UnitTestExecutor StartTest should")
 

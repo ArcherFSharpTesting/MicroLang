@@ -2,7 +2,7 @@ module Archer.MicroLang.Tests.``UnitTestExecutor With a Failing Test``
 
 open Archer.CoreTypes
 open Archer.CoreTypes.InternalTypes
-open Archer.MicroLang.Lang
+open Archer.MicroLang
 open Archer.MicroLang.Types
 
 let private container = suite.Container ("TestingLibrary", "UnitTestExecutor Failing Test")

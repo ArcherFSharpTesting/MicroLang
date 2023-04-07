@@ -1,6 +1,6 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor EndSetup``
 
-open Archer.MicroLang.Lang
+open Archer.MicroLang
 open Archer.MicroLang.Types
 open Archer.CoreTypes
 

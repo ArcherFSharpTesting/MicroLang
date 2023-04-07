@@ -1,7 +1,8 @@
 module Archer.MicroLang.Tests.``UnitTest Base Case``
 
 open Archer.CoreTypes.InternalTypes
-open Archer.MicroLang.Lang
+
+open Archer.MicroLang
 open Archer.MicroLang.Types
 
 let private container = suite.Container ("TestingLibrary", "UnitTest should")
