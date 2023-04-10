@@ -45,12 +45,12 @@ let reportFailures (failures: (TestingFailure * ITest) list) =
 
         results
         |> List.iter (fun (failure, test) ->
-            printfn "----------------------"
+            printfn "\t\t----------------------"
             printfn $"\t\t%s{test.TestName}"
             printfn $"\t\t\t%A{failure}"
             printfn ""
             printfn $"\t\t%s{System.IO.Path.Combine (test.FilePath, test.FileName)}(%d{test.LineNumber})"
-            printfn "----------------------"
+            printfn "\t\t----------------------"
         )
     )
 
