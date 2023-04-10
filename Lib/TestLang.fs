@@ -45,7 +45,6 @@ let reportFailures (failures: (TestingFailure * ITest) list) =
 
         results
         |> List.iter (fun (failure, test) ->
-            printfn "\t\t----------------------"
             printfn $"\t\t%s{test.TestName}"
             printfn $"\t\t\t%A{failure}"
             printfn ""
