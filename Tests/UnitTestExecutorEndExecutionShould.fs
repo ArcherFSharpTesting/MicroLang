@@ -5,7 +5,7 @@ open Archer.MicroLang
 let private container = suite.Container ("TestLibrary", "UnitTestExecutor EndExecution should")
 
 let ``Test Cases`` = [
-    container.Test ("be raised when the test is executed", fun () ->
+    container.Test ("be raised when the test is executed", fun _ ->
         let executor = buildDummyExecutor None None
         
         let mutable result = notRunGeneralFailure
@@ -13,7 +13,9 @@ let ``Test Cases`` = [
             result <- tst |> expectsToBe executor.Parent
         )
         
-        executor.Execute ()
+        executor
+        |> getNoFrameworkInfoFromExecution
+        |> executor.Execute
         |> ignore
         
         result

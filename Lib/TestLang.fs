@@ -12,9 +12,9 @@ let ignoreString _ = $"%d{randomInt ()}%d{randomInt ()}%d{randomInt ()}"
 
 let ignorePath _ = $"%s{ignoreString ()}.test"
 
-let successfulTest () = TestSuccess
+let successfulTest _ = TestSuccess
         
-let buildDummyTest (testAction: (unit -> TestResult) option) (parts: TestPart option) =
+let buildDummyTest (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
     let c = suite.Container (ignoreString (), ignoreString ())
         
     match parts, testAction with
@@ -23,7 +23,7 @@ let buildDummyTest (testAction: (unit -> TestResult) option) (parts: TestPart op
     | Some part, None -> c.Test (ignoreString (), successfulTest, part, ignoreString (), ignoreInt ())
     | Some part, Some action -> c.Test (ignoreString (), action, part, ignoreString (), ignoreInt ())
     
-let buildDummyExecutor (testAction: (unit -> TestResult) option) (parts: TestPart option) =
+let buildDummyExecutor (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
     let test = buildDummyTest testAction parts
     
     test.GetExecutor ()

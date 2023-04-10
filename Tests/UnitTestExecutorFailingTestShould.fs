@@ -1,5 +1,6 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor With a Failing Test``
 
+open System
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
@@ -9,23 +10,26 @@ let private container = suite.Container ("TestingLibrary", "UnitTestExecutor Fai
 let generateFailure failureType details =
     details |> failureType |> TestFailure
     
-let private dummyExecutor (testAction: (unit -> TestResult) option) (parts: TestPart option) =
+let private dummyExecutor (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
     let test = buildDummyTest testAction parts
         
     test.GetExecutor ()
     
 let ``Test Cases`` = [
-    container.Test ("Should return failure if the test action returns failure", fun () ->
+    container.Test ("Should return failure if the test action returns failure", fun _ ->
         let expectedResult = { Actual = "Things don't add up"; Expected = "nice and tidy" } |> generateFailure VerificationFailure
-        let test = dummyExecutor (Some (fun () -> expectedResult)) None
+        let test = dummyExecutor (Some (fun _ -> expectedResult)) None
         
-        let result = test.Execute ()
+        let result =
+            test
+            |> getNoFrameworkInfoFromExecution
+            |> test.Execute
         
         result
         |> expectsToBe expectedResult
     )
     
-    container.Test ("Should raise all events even if setup fails", fun () ->
+    container.Test ("Should raise all events even if setup fails", fun _ ->
         let failure = "Setup Fail" |> generateFailure SetupFailure
         let test = dummyExecutor None (Some (SetupPart (fun () -> failure)))
         
@@ -40,23 +44,29 @@ let ``Test Cases`` = [
         test.StartTearDown.AddHandler increment
         test.EndExecution.AddHandler increment
         
-        test.Execute () |> ignore 
+        test
+        |> getNoFrameworkInfoFromExecution
+        |> test.Execute
+        |> ignore 
         
         cnt
         |> expectsToBe 7
     )
     
-    container.Test ("Should raise all events even if setup fails", fun () ->
+    container.Test ("Should raise all events even if setup fails", fun _ ->
         let failure = "Setup Fail" |> generateFailure SetupFailure
         let test = dummyExecutor None (Some (SetupPart (fun () -> failure)))
         
-        let result = test.Execute ()
+        let result =
+            test
+            |> getNoFrameworkInfoFromExecution
+            |> test.Execute
         
         result
         |> expectsToBe failure
     )
     
-    container.Test ("Should raise all events even if setup fails", fun () ->
+    container.Test ("Should raise all events even if setup fails", fun _ ->
         let failure = "Setup Fail" |> generateFailure SetupFailure
         let test = dummyExecutor None (Some (SetupPart (fun () -> failure)))
         
@@ -82,22 +92,28 @@ let ``Test Cases`` = [
         test.EndTest.AddHandler testTheResult
         test.EndExecution.AddHandler testTheResult
         
-        test.Execute () |> ignore 
+        test
+        |> getNoFrameworkInfoFromExecution
+        |> test.Execute
+        |> ignore 
         
         result
     )
     
-    container.Test ("Should raise all events even if setup fails", fun () ->
+    container.Test ("Should raise all events even if setup fails", fun _ ->
         let failure = "Setup Fail" |> generateFailure SetupFailure
         let mutable result = TestSuccess
         
-        let testAction () =
+        let testAction _ =
             result <- notRunValidationFailure
             result
         
         let test = dummyExecutor (Some testAction) (Some (SetupPart (fun () -> failure)))
         
-        test.Execute () |> ignore
+        test
+        |> getNoFrameworkInfoFromExecution
+        |> test.Execute
+        |> ignore
         
         result
     )

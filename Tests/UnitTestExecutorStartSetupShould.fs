@@ -7,7 +7,7 @@ open Archer.MicroLang.Types
 let private container = suite.Container ("TestingLibrary", "UnitTestExecutor StartSetup should")
 
 let ``Test Cases`` = [
-    container.Test ("be raised when test is executed", fun () ->
+    container.Test ("be raised when test is executed", fun _ ->
         let executor = buildDummyExecutor None None
         
         let mutable result = notRunGeneralFailure
@@ -15,13 +15,15 @@ let ``Test Cases`` = [
             result <- tst |> expectsToBe executor.Parent
         )
         
-        executor.Execute ()
+        executor
+        |> getNoFrameworkInfoFromExecution
+        |> executor.Execute
         |> ignore
         
         result
     )
     
-    container.Test ("prevent the call of the test setup if canceled", fun () ->
+    container.Test ("prevent the call of the test setup if canceled", fun _ ->
         let mutable result = TestSuccess
         
         let setupPart =
@@ -37,15 +39,18 @@ let ``Test Cases`` = [
             args.Cancel <- true
         )
         
-        executor.Execute ()  |> ignore
+        executor
+        |> getNoFrameworkInfoFromExecution
+        |> executor.Execute
+        |> ignore
         
         result
     )
     
-    container.Test ("prevent the call of the test action if canceled", fun () ->
+    container.Test ("prevent the call of the test action if canceled", fun _ ->
         let mutable result = TestSuccess
         
-        let testAction () =
+        let testAction _ =
             result <- notRunValidationFailure
             TestSuccess
             
@@ -55,15 +60,18 @@ let ``Test Cases`` = [
             args.Cancel <- true
         )
         
-        executor.Execute ()  |> ignore
+        executor
+        |> getNoFrameworkInfoFromExecution
+        |> executor.Execute
+        |> ignore
         
         result
     )
     
-    container.Test ("prevent the call of the test action if failed", fun () ->
+    container.Test ("prevent the call of the test action if failed", fun _ ->
         let mutable result = TestSuccess
         
-        let testAction () =
+        let testAction _ =
             result <- notRunValidationFailure
             
             "some setup failure"
@@ -76,19 +84,24 @@ let ``Test Cases`` = [
             args.Cancel <- true
         )
         
-        executor.Execute ()  |> ignore
+        executor
+        |> getNoFrameworkInfoFromExecution
+        |> executor.Execute
+        |> ignore
         
         result
     )
     
-    container.Test ("should cause execution to return a CancelError if canceled", fun () ->
+    container.Test ("should cause execution to return a CancelError if canceled", fun _ ->
         let executor = buildDummyExecutor None None
         
         executor.StartSetup.Add (fun args ->
             args.Cancel <- true
         )
         
-        executor.Execute ()
+        executor
+        |> getNoFrameworkInfoFromExecution
+        |> executor.Execute
         |> expectsToBe (TestFailure CancelFailure)
     )
 ]

@@ -59,7 +59,7 @@ module TypeSupport =
         
 open TypeSupport
         
-type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: unit -> TestResult, tearDown: unit -> TestResult) =
+type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TestResult) =
     let startExecution = Event<CancelDelegate, CancelEventArgs> ()
     let startSetup = Event<CancelDelegate, CancelEventArgs> ()
     let endSetup = Event<CancelTestDelegate, TestCancelEventArgsWithResults> ()
@@ -84,12 +84,12 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: unit -> T
     
     member _.Parent with get () = parent
     
-    member _.Execute () =
+    member _.Execute env =
         TestSuccess
         |> wrapCancel startExecution parent
         |> joinCancelEvent startSetup setup parent
         |> wrapCancelResult endSetup parent
-        |> joinCancelEvent startTest test parent
+        |> joinCancelEvent startTest (fun () -> test env) parent
         |> wrapEvent endTest parent
         |> joinEvent startTearDown tearDown parent
         |> wrapEvent endExecution parent
@@ -113,7 +113,7 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: unit -> T
         [<CLIEvent>]
         member this.EndExecution = this.EndExecution
         member _.Parent with get () = parent
-        member this.Execute () = this.Execute ()
+        member this.Execute env = this.Execute env
             
 type TestPart =
     | EmptyPart
@@ -121,7 +121,7 @@ type TestPart =
     | TearDownPart of (unit -> TestResult)
     | Both of setup: (unit -> TestResult) * tearDown: (unit -> TestResult)
             
-type UnitTest (filePath: string, containerPath: string, containerName: string, testName: string, lineNumber: int, tags: TestTag seq, test: unit -> TestResult, testParts: TestPart) =
+type UnitTest (filePath: string, containerPath: string, containerName: string, testName: string, lineNumber: int, tags: TestTag seq, test: FrameworkEnvironment -> TestResult, testParts: TestPart) =
     let setup, tearDown =
         match testParts with
         | EmptyPart -> success, success
@@ -155,21 +155,21 @@ type UnitTest (filePath: string, containerPath: string, containerName: string, t
         :> ITestExecutor
         
     interface ITest with
-        member _.ContainerPath = containerPath
-        member _.ContainerName = containerName
-        member _.LineNumber = lineNumber
-        member _.Tags = tags
-        member _.TestName = testName
-        member _.FileName = fileName
-        member _.FilePath = filePath
+        member _.ContainerPath with get () = containerPath
+        member _.ContainerName with get () = containerName
+        member _.LineNumber with get () = lineNumber
+        member _.Tags with get () = tags
+        member _.TestName with get () = testName
+        member _.FileName with get () = fileName
+        member _.FilePath with get () = filePath
         
         member this.GetExecutor() = this.GetExecutor ()
             
 type TestBuilder (containerPath: string, containerName: string) =
-    member _.Test(testName: string, action: unit -> TestResult, part: TestPart, [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member _.Test(testName: string, action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         UnitTest (path, containerPath , containerName, testName, lineNumber, [], action, part) :> ITest
     
-    member this.Test (testName: string, action: unit -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (testName: string, action: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test(testName, action, EmptyPart, path, lineNumber)
     
 type TestContainerBuilder () =

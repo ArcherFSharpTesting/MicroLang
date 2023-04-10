@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="TestHelpers.fs" />
     <Compile Include="UnitTestShould.fs" />
     <Compile Include="UnitTestExecutorHappyPathShould.fs" />
     <Compile Include="UnitTestExecutorFailingTestShould.fs" />
@@ -22,7 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archer.Bow.Lib" Version="0.0.4" />
+    <PackageReference Include="Archer.Bow.Lib" Version="0.0.5" />
+    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.11" />
   </ItemGroup>
 
   <ItemGroup>

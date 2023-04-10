@@ -1,24 +1,27 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor Happy Path``
 
+open System
 open Archer.MicroLang
 
 let private container = suite.Container ("TestLibrary", "UnitTestExecutor happy path")
 
 let ``Test Cases`` = [
-    container.Test("Should have the creating test as its parent", fun () ->
+    container.Test("Should have the creating test as its parent", fun _ ->
         let executor = buildDummyExecutor None None
         
         executor.Parent
         |> expectsToBe executor.Parent
     )
     
-    container.Test ("Should return success if test action returns success", fun () ->
+    container.Test ("Should return success if test action returns success", fun _ ->
         let test = buildDummyExecutor None None
         
-        test.Execute ()
+        test
+        |> getNoFrameworkInfoFromExecution
+        |> test.Execute 
     )
     
-    container.Test("Should raise all events in correct order", fun () ->
+    container.Test("Should raise all events in correct order", fun _ ->
         let executor = buildDummyExecutor None None
         
         let mutable cnt = 0
@@ -89,7 +92,11 @@ let ``Test Cases`` = [
             result <- r |> combineResult result
         )
             
-        executor.Execute () |> ignore
+        executor
+        |> getNoFrameworkInfoFromExecution
+        |> executor.Execute
+        |> ignore
+        
         result
     )
 ]
