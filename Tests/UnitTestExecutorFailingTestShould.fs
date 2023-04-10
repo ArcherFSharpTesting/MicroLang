@@ -1,6 +1,6 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor With a Failing Test``
 
-open Archer.CoreTypes
+open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
 open Archer.MicroLang.Types

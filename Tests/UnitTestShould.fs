@@ -24,24 +24,6 @@ let ``Test Cases`` = [
         |> expectsToBe expectedName
     )
     
-    container.Test ("have the container fullname", fun () ->
-        let expectedName = "My Container Full Name"
-        let test = UnitTest (ignorePath (), expectedName, ignoreString (), ignoreString (), ignoreInt (), [], successfulTest, EmptyPart) :> ITest
-        
-        test.ContainerFullName
-        |> expectsToBe expectedName
-    )
-    
-    container.Test ("have the test fullname", fun () ->
-        let testName = "My Test Name"
-        let containerFullName = "My Container Full Name"
-        let expectedName = $"%s{containerFullName} <> %s{testName}"
-        let test = UnitTest (ignorePath (), containerFullName, ignoreString (), testName, ignoreInt (), [], successfulTest, EmptyPart) :> ITest
-        
-        test.TestFullName
-        |> expectsToBe expectedName
-    )
-    
     container.Test ("have the line number", fun () ->
         let expectedLineNumber = 66
         let test = UnitTest (ignorePath (), ignoreString (), ignoreString(), ignoreString (), expectedLineNumber, [], successfulTest, EmptyPart) :> ITest
@@ -59,9 +41,9 @@ let ``Test Cases`` = [
     )
     
     container.Test ("have well formed string representation", fun () ->
-        let test = UnitTest (ignorePath (), "Container Full Path", ignoreString (), "Test Name", 47, [], successfulTest, EmptyPart)
+        let test = UnitTest (ignorePath (), "Container Path", "Container Name", "Test Name", 47, [], successfulTest, EmptyPart)
         
         test.ToString ()
-        |> expectsToBe "Container Full Path <> Test Name"
+        |> expectsToBe "Container Path <> Container Name <> Test Name"
     )
 ]

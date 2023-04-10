@@ -1,7 +1,7 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor StartSetup``
 
 open Archer.MicroLang
-open Archer.CoreTypes
+open Archer
 open Archer.MicroLang.Types
 
 let private container = suite.Container ("TestingLibrary", "UnitTestExecutor StartSetup should")

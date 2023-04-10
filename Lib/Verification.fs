@@ -1,7 +1,7 @@
 ﻿[<AutoOpen>]
 module Archer.MicroLang.Verification
 
-open Archer.CoreTypes
+open Archer
 
 let combineResultIgnoring defaultError a b =
     match a, b with

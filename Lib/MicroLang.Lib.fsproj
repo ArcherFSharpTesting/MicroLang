@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>Archer.MicroLang</RootNamespace>
-    <Version>0.0.2</Version>
+    <Version>0.0.4</Version>
     <Title>MicroLang</Title>
   </PropertyGroup>
 
@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.5" />
+    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.9" />
   </ItemGroup>
 
 </Project>

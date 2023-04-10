@@ -1,7 +1,7 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor StartExecution``
 
 open Archer.MicroLang.Types
-open Archer.CoreTypes
+open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
 

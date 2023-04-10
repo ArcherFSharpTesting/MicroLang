@@ -3,7 +3,7 @@
 
 open Archer.Bow
 open Archer.MicroLang.Tests
-open Archer.CoreTypes
+open Archer
 
 let framework = bow.Framework ()
 
@@ -65,15 +65,35 @@ let failureCount = failures |> List.length
 printfn $"\nTests Passing: %d{results.Successes |> List.length}, Ignored: %d{ignored |> List.length} Failing: %d{failureCount}\n"
 
 failures
-|> List.iter (fun (result, test) ->
-    printfn $"%s{test.TestFullName}\n\t%A{result}\n\t\t%s{test.FilePath} %d{test.LineNumber}"
+|> List.groupBy (fun (_, test) -> test.ContainerPath, test.ContainerName)
+|> List.iter (fun ((containerPath, containerName), (results)) ->
+    printfn $"%s{containerPath}"
+    printfn $"\t%s{containerName}"
+
+    results
+    |> List.iter (fun (failure, test) ->
+        printfn $"\t\t%s{test.TestName}"
+        printfn $"\t\t\t%A{failure}"
+        printfn ""
+        printfn $"\t\t%s{System.IO.Path.Join (test.FilePath, test.FileName)}(%d{test.LineNumber})"
+    )
 )
 
 printfn ""
 
 ignored
-|> List.iter (fun (result, test) ->
-    printfn $"%s{test.TestFullName}\n%A{result}\n\t%s{test.FilePath} %d{test.LineNumber}"
+|> List.groupBy (fun (_, test) -> test.ContainerPath, test.ContainerName)
+|> List.iter (fun ((containerPath, containerName), (results)) ->
+    printfn $"%s{containerPath}"
+    printfn $"\t%s{containerName}"
+
+    results
+    |> List.iter (fun (failure, test) ->
+        printfn $"\t\t%s{test.TestName}"
+        printfn $"\t\t\t%A{failure}"
+        printfn ""
+        printfn $"\t\t%s{System.IO.Path.Join (test.FilePath, test.FileName)}(%d{test.LineNumber})"
+    )
 )
 
 printfn $"\n\nTotal Time: %A{endTime - startTime}"

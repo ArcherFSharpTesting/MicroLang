@@ -1,7 +1,7 @@
 ﻿[<AutoOpen>]
 module Archer.MicroLang.Lang
 
-open Archer.CoreTypes
+open Archer
 open Archer.MicroLang.Types
 
 let suite = TestContainerBuilder ()
