@@ -55,6 +55,8 @@ module TypeSupport =
         | TestFailure a, TestFailure b -> CombinationFailure (a, b) |> TestFailure
         | TestFailure _, _ -> previousResult
         | _, TestFailure _ -> result
+        | Ignored a, _
+        | _, Ignored a -> Ignored a
         | _ -> TestSuccess
         
 open TypeSupport
