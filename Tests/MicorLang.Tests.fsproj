@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="WhatsYourVersion.BuildDateAttribute">
+      <_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="TestHelpers.fs" />
     <Compile Include="UnitTestShould.fs" />
     <Compile Include="UnitTestExecutorHappyPathShould.fs" />
@@ -25,6 +31,7 @@
   <ItemGroup>
     <PackageReference Include="Archer.Bow.Lib" Version="0.0.8.3" />
     <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.3" />
+    <PackageReference Include="whats-your-version" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
