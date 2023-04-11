@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.3" />
+    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.4" />
     <PackageReference Include="whats-your-version" Version="2.1.0" />
   </ItemGroup>
 
