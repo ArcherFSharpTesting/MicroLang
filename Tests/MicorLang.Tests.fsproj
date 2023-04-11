@@ -8,12 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AssemblyAttribute Include="WhatsYourVersion.BuildDateAttribute">
-      <_Parameter1>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="TestHelpers.fs" />
     <Compile Include="UnitTestShould.fs" />
     <Compile Include="UnitTestExecutorHappyPathShould.fs" />
