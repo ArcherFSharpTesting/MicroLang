@@ -23,7 +23,7 @@ let ``prevent the call of the test setup if canceled`` =
         executor.TestLifecycleEvent
         |> Event.add (fun args ->
             match args with
-            | TestExecutionStarted cancelEventArgs ->
+            | TestStartExecution cancelEventArgs ->
                 cancelEventArgs.Cancel <- true
             | _ -> ()
         )
@@ -49,7 +49,7 @@ let ``prevent the call of the test action if canceled`` =
         executor.TestLifecycleEvent
         |> Event.add (fun args ->
             match args with
-            | TestExecutionStarted cancelEventArgs ->
+            | TestStartExecution cancelEventArgs ->
                 cancelEventArgs.Cancel <- true
             | _ -> ()
         )
@@ -69,7 +69,7 @@ let ``should cause execution to return a CancelError if canceled`` =
         executor.TestLifecycleEvent
         |> Event.add (fun args ->
             match args with
-            | TestExecutionStarted cancelEventArgs ->
+            | TestStartExecution cancelEventArgs ->
                 cancelEventArgs.Cancel <- true
             | _ -> ()
         )

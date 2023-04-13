@@ -35,7 +35,7 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: Framework
     let testLifecycleEvent = Event<TestExecutionDelegate, TestEventLifecycle> ()
     
     let raiseStartExecution cancelEventArgs =
-        testLifecycleEvent.Trigger (parent, TestExecutionStarted cancelEventArgs)
+        testLifecycleEvent.Trigger (parent, TestStartExecution cancelEventArgs)
         cancelEventArgs
         
     let raiseStartSetup capture cancelEventArgs =

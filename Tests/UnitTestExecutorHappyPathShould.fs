@@ -39,7 +39,7 @@ let ``Should raise all events in correct order`` =
         executor.TestLifecycleEvent
         |> Event.add (fun args ->
             match args with
-            | TestExecutionStarted _ ->
+            | TestStartExecution _ ->
                 let r =
                     cnt
                     |> expects.ToBe 0
