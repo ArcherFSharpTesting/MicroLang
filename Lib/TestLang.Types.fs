@@ -84,8 +84,8 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: Framework
             match result, value with
             | TestFailure _ as failure, _
             | _, (TestFailure _ as failure) -> result <- failure
-            | Ignored _ as ing, _
-            | _, (Ignored _ as ing) -> result <- ing
+            | TestIgnored _ as ing, _
+            | _, (TestIgnored _ as ing) -> result <- ing
             | _ -> result <- TestSuccess
             
         CancelEventArgs ()

@@ -62,7 +62,7 @@ type Expect () =
             message,
             buildLocation fullPath lineNumber
         )
-        |> Ignored
+        |> TestIgnored
         
     member this.ToBeIgnored (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.ToBeIgnored (Some message, fullPath, lineNumber)
@@ -87,8 +87,8 @@ let combineResultIgnoring defaultError a b =
     | _, (TestFailure (SetupFailure _) as failure) -> failure
     | TestFailure (TearDownFailure _) as failure, _
     | _, (TestFailure (TearDownFailure _) as failure) -> failure
-    | Ignored _ as ing, _
-    | _, (Ignored _ as ing) -> ing
+    | TestIgnored _ as ing, _
+    | _, (TestIgnored _ as ing) -> ing
     
     //| TestFailure tfa, TestFailure tfb -> CombinationFailure (tfa, tfb) |> TestFailure
     
@@ -106,5 +106,5 @@ let withMessage message result =
     match result with
     | TestFailure (TestExecutionFailure f) -> FailureWithMessage (message, f) |> TestExecutionFailure |> TestFailure
     | TestSuccess
-    | Ignored _
+    | TestIgnored _
     | TestFailure _ -> result
