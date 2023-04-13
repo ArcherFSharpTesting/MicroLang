@@ -158,12 +158,29 @@ type TestBuilder (containerPath: string, containerName: string) =
     
     member this.Test (action: FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test(action, EmptyPart, testName, fullPath, lineNumber)
+        
+    member this.Test( testName: string, action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (action, part, testName, fullPath, lineNumber)
+
+    member this.Test (testName: string, action: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (action, testName, fullPath, lineNumber)
+
     
 type TestContainerBuilder () =
-    member _.Container () =
-        let trace = StackTrace ()
-        let method = trace.GetFrame(1).GetMethod ()
-        let containerName = method.ReflectedType.Name
-        let containerPath = method.ReflectedType.Namespace |> fun s -> s.Split ([|"$"|], StringSplitOptions.RemoveEmptyEntries) |> Array.last
+    member _.Container ([<Optional; DefaultParameterValue("")>]containerName: string, [<Optional; DefaultParameterValue("")>]containerPath: string) =
+        let containerName, containerPath =
+            if containerName |> String.IsNullOrWhiteSpace || containerPath |> String.IsNullOrWhiteSpace then
+                let trace = StackTrace ()
+                let method = trace.GetFrame(1).GetMethod ()
+                let containerName =
+                    if containerName |> String.IsNullOrWhiteSpace then method.ReflectedType.Name
+                    else containerName
+                let containerPath =
+                    if containerPath |> String.IsNullOrWhiteSpace then method.ReflectedType.Namespace |> fun s -> s.Split ([|"$"|], StringSplitOptions.RemoveEmptyEntries) |> Array.last
+                    else containerPath
+                    
+                containerName, containerPath
+            else
+                containerName, containerPath
         
         TestBuilder (containerPath, containerName)
