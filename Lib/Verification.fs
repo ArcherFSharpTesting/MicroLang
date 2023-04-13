@@ -1,7 +1,55 @@
 ﻿[<AutoOpen>]
 module Archer.MicroLang.Verification
 
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+open Archer.MicroLang.Types.TypeSupport
 open Archer
+
+type Expect () =
+    member this.ToBe (expected, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let check actual =
+            if actual = expected then TestSuccess
+            else
+                this.AsValidationFailure ({ Expected = $"%A{expected}"; Actual = $"%A{actual}" }, fullPath, lineNumber)
+                |> TestFailure
+                
+        check
+        
+    member this.ToBeTrue ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.ToBe (true, fullPath, lineNumber)
+        
+    member this.AsGeneralFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        (
+            message,
+            buildLocation fullPath lineNumber
+        ) |> GeneralFailure
+        
+    member this.AsValidationFailure (expected, actual, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.AsValidationFailure (
+            {
+                Expected = expected
+                Actual = actual 
+            }, fullPath, lineNumber
+        )
+        
+    member this.AsValidationFailure (results, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        (
+            results,
+            buildLocation fullPath lineNumber
+        ) |> VerificationFailure
+        
+    member this.AsSetupFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        (
+            message,
+            buildLocation fullPath lineNumber
+        ) |> SetupFailure
+        
+    member this.GeneralNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.AsGeneralFailure ("Not Run", fullPath, lineNumber)
+        
+let expects = Expect ()
+                
 
 let combineResultIgnoring defaultError a b =
     match a, b with
@@ -20,27 +68,16 @@ let orResult a b =
     | _ -> a
 
 let combineError = combineResultIgnoring TestSuccess
-
-let expectsToBe expected result =
-    if expected = result then TestSuccess
-    else
-        {
-            Expected = $"%A{expected}"
-            Actual = $"%A{result}"
-        }
-        |> VerificationFailure
-        |> TestFailure
         
-let expectsToBeWithMessage expected message result =
-    let r =
-        result
-        |> expectsToBe expected
-        
-    match r with
-    | TestSuccess -> r
+let withMessage message result =
+    match result with
+    | TestSuccess
+    | Ignored _ -> result
     | TestFailure f -> FailureWithMessage (message, f) |> TestFailure
+    
+let notRunGeneralFailure = "Not Run" |> expects.AsGeneralFailure
 
-let verifyWith = expectsToBe
-        
-let expectsToBeTrue = expectsToBe true
-       
+let notRunExpectation = { Expected = "Not to have been run"; Actual = "Was run" } |> expects.AsValidationFailure
+
+let notRunValidationFailure = notRunExpectation |> TestFailure
+

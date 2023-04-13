@@ -11,40 +11,45 @@ let private container = suite.Container ("TestingLibrary", "UnitTest should")
 let ``Test Cases`` = [
     container.Test ("have the test name", fun _ ->
         let expectedName = "My Test Name"
-        let test = UnitTest (ignorePath (), ignoreString (), ignoreString (), expectedName, ignoreInt (), [], successfulTest, EmptyPart) :> ITest
+        let test = UnitTest (ignoreString (), ignoreString (), expectedName, [], successfulTest, EmptyPart, ignoreLocation ()) :> ITest
         
         test.TestName
-        |> expectsToBe expectedName
+        |> expects.ToBe expectedName
     )
 
     container.Test ("have the container name", fun _ ->
         let expectedName = "My Container Name"
-        let test = UnitTest (ignorePath (), ignoreString(), expectedName, ignoreString (), ignoreInt (), [], successfulTest, EmptyPart) :> ITest
+        let test = UnitTest (ignoreString(), expectedName, ignoreString (), [], successfulTest, EmptyPart, ignoreLocation ()) :> ITest
         
         test.ContainerName
-        |> expectsToBe expectedName
+        |> expects.ToBe expectedName
     )
     
-    container.Test ("have the line number", fun _ ->
+    container.Test ("have the location", fun _ ->
         let expectedLineNumber = 66
-        let test = UnitTest (ignorePath (), ignoreString (), ignoreString(), ignoreString (), expectedLineNumber, [], successfulTest, EmptyPart) :> ITest
+        let location = {
+            FilePath = ignoreString ()
+            FileName = ignoreString ()
+            LineNumber = ignoreInt () 
+        }
+        let test = UnitTest (ignoreString (), ignoreString(), ignoreString (), [], successfulTest, EmptyPart, location) :> ITest
         
-        test.LineNumber
-        |> expectsToBe expectedLineNumber
+        test.Location
+        |> expects.ToBe location
     )
     
     container.Test ("have tags", fun _ ->
         let tags = [Category "My Test"]
-        let test = UnitTest (ignorePath (), ignoreString (), ignoreString (), ignoreString (), ignoreInt (), tags, successfulTest, EmptyPart) :> ITest
+        let test = UnitTest (ignoreString (), ignoreString (), ignoreString (), tags, successfulTest, EmptyPart, ignoreLocation ()) :> ITest
         
         test.Tags
-        |> expectsToBe tags
+        |> expects.ToBe tags
     )
     
     container.Test ("have well formed string representation", fun _ ->
-        let test = UnitTest (ignorePath (), "Container Path", "Container Name", "Test Name", 47, [], successfulTest, EmptyPart)
+        let test = UnitTest ("Container Path", "Container Name", "Test Name", [], successfulTest, EmptyPart, ignoreLocation ())
         
         test.ToString ()
-        |> expectsToBe "Container Path <> Container Name <> Test Name"
+        |> expects.ToBe "Container Path <> Container Name <> Test Name"
     )
 ]

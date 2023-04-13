@@ -9,113 +9,102 @@ open Archer.CoreTypes.InternalTypes
 
 module TypeSupport =
     let success () = TestSuccess
-    let maybeTriggerCancel sender (event: Event<'a, 'b :> CancelEventArgs>) (getCancel: unit -> 'b) previousResult =
-        let cancelArgs = getCancel ()
-        event.Trigger (sender, cancelArgs)
-
-        match cancelArgs.Cancel with
-        | true -> CancelFailure |> TestFailure
-        | _ -> previousResult
-
-    let trigger sender (event: Event<'a, TestEventArgs>) previousResult =
-        match previousResult with
-        | TestFailure CancelFailure -> previousResult
-        | _ ->
-            let args = TestEventArgs previousResult
-            event.Trigger (sender, args)
-            previousResult
-
-    let wrapEvent event sender previousResult = 
-        trigger sender event previousResult
-
-    let wrapCancel event sender previousResult =
-        maybeTriggerCancel sender event CancelEventArgs previousResult
-
-    let wrapCancelResult event sender previousResult =
-        maybeTriggerCancel sender event (fun () -> TestCancelEventArgsWithResults previousResult) previousResult
-
-    let joinCancelEventResult event action sender previousResult =
-        let result = wrapCancelResult event sender previousResult
-        match result with
-        | TestFailure _ -> result
-        | _ -> action ()
-
-    let joinCancelEvent event action sender previousResult =
-        let result = wrapCancel event sender previousResult
-        match result with
-        | TestFailure _ -> result
-        | _ -> action ()
+    
+    let shouldContinue (cancelEventArgs: CancelEventArgs) =
+        cancelEventArgs.Cancel |> not
         
-    let joinEvent (event: Event<TestDelegate, EventArgs>) action sender previousResult =
-        event.Trigger (sender, EventArgs.Empty)
+    let testCancelFailure = CancelFailure |> TestFailure
+    
+    let buildLocation (fullPath: string) lineNumber =
+        let fileInfo = System.IO.FileInfo fullPath
+        let path = fileInfo.Directory.FullName
+        let fileName = fileInfo.Name
         
-        let result = action ()
-        
-        match previousResult, result with
-        | TestFailure a, TestFailure b -> CombinationFailure (a, b) |> TestFailure
-        | TestFailure _, _ -> previousResult
-        | _, TestFailure _ -> result
-        | Ignored a, _
-        | _, Ignored a -> Ignored a
-        | _ -> TestSuccess
-        
+        {
+            FilePath = path
+            FileName = fileName
+            LineNumber = lineNumber 
+        }
+    
 open TypeSupport
         
-type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TestResult) =
-    let startExecution = Event<CancelDelegate, CancelEventArgs> ()
-    let startSetup = Event<CancelDelegate, CancelEventArgs> ()
-    let endSetup = Event<CancelTestDelegate, TestCancelEventArgsWithResults> ()
-    let startTest = Event<CancelDelegate, CancelEventArgs> ()
-    let endTest = Event<TestResultDelegate, TestEventArgs> ()
-    let startTearDown = Event<TestDelegate, EventArgs> ()
-    let endExecution = Event<TestResultDelegate, TestEventArgs> ()
-    [<CLIEvent>]
-    member _.StartExecution = startExecution.Publish
-    [<CLIEvent>]
-    member _.StartSetup = startSetup.Publish
-    [<CLIEvent>]
-    member _.EndSetup = endSetup.Publish
-    [<CLIEvent>]
-    member _.StartTest = startTest.Publish
-    [<CLIEvent>]
-    member _.EndTest = endTest.Publish
-    [<CLIEvent>]
-    member _.StartTearDown = startTearDown.Publish
-    [<CLIEvent>]
-    member _.EndExecution = endExecution.Publish
+type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TestResult) as this=
+    let testLifecycleEvent = Event<TestExecutionDelegate, TestEventLifecycle> ()
     
+    let raiseStartExecution cancelEventArgs =
+        testLifecycleEvent.Trigger (parent, TestExecutionStarted cancelEventArgs)
+        cancelEventArgs
+        
+    let raiseStartSetup capture cancelEventArgs =
+        testLifecycleEvent.Trigger (parent, TestSetupStarted cancelEventArgs)
+        if cancelEventArgs |> shouldContinue then
+            setup () |> capture
+            cancelEventArgs
+        else
+            testCancelFailure |> capture
+            cancelEventArgs
+        
+    let raiseEndSetup testResult cancelEventArgs =
+        testLifecycleEvent.Trigger (parent, TestEndSetup (testResult, cancelEventArgs))
+        cancelEventArgs
+        
+    let raiseTestStart capture env cancelEventArgs =
+        testLifecycleEvent.Trigger (parent, TestStart cancelEventArgs)
+        if cancelEventArgs |> shouldContinue then
+            test env |> capture
+            cancelEventArgs
+        else
+            testCancelFailure |> capture
+            cancelEventArgs
+        
+    let raiseTestEnd result arg =
+        testLifecycleEvent.Trigger (parent, TestEnd result)
+        arg
+        
+    let raiseStartTearDown capture arg =
+        testLifecycleEvent.Trigger (parent, TestStartTearDown)
+        tearDown () |> capture
+        arg
+        
+    let raiseEndExecution result arg =
+        testLifecycleEvent.Trigger (parent, TestEndExecution result)
+        arg
+        
     member _.Parent with get () = parent
     
     member _.Execute env =
-        TestSuccess
-        |> wrapCancel startExecution parent
-        |> joinCancelEvent startSetup setup parent
-        |> wrapCancelResult endSetup parent
-        |> joinCancelEvent startTest (fun () -> test env) parent
-        |> wrapEvent endTest parent
-        |> joinEvent startTearDown tearDown parent
-        |> wrapEvent endExecution parent
+        let mutable result = TestSuccess
+        
+        let writeResult value =
+            match result, value with
+            | TestFailure a, TestFailure b ->
+                result <- CombinationFailure (a, b) |> TestFailure
+            | TestFailure _ as failure, _
+            | _, (TestFailure _ as failure) -> result <- failure
+            | Ignored _ as ing, _
+            | _, (Ignored _ as ing) -> result <- ing
+            | _ -> ()
+            
+        CancelEventArgs ()
+        |> raiseStartExecution
+        |> raiseStartSetup writeResult
+        |> raiseEndSetup result
+        |> raiseTestStart writeResult env
+        |> raiseTestEnd result
+        |> raiseStartTearDown writeResult
+        |> raiseEndExecution result
+        |> ignore
+        
+        result
         
     override this.ToString () =
         $"%s{this.Parent.ToString ()}.Executor"
     
     interface ITestExecutor with
-        [<CLIEvent>]
-        member this.StartExecution = this.StartExecution
-        [<CLIEvent>]
-        member this.StartSetup = this.StartSetup
-        [<CLIEvent>]
-        member this.EndSetup = this.EndSetup
-        [<CLIEvent>]
-        member this.StartTest = this.StartTest
-        [<CLIEvent>]
-        member this.EndTest = this.EndTest
-        [<CLIEvent>]
-        member this.StartTearDown = this.StartTearDown
-        [<CLIEvent>]
-        member this.EndExecution = this.EndExecution
         member _.Parent with get () = parent
         member this.Execute env = this.Execute env
+        [<CLIEvent>]
+        member this.TestLifecycleEvent = testLifecycleEvent.Publish
             
 type TestPart =
     | EmptyPart
@@ -123,18 +112,13 @@ type TestPart =
     | TearDownPart of (unit -> TestResult)
     | Both of setup: (unit -> TestResult) * tearDown: (unit -> TestResult)
             
-type UnitTest (filePath: string, containerPath: string, containerName: string, testName: string, lineNumber: int, tags: TestTag seq, test: FrameworkEnvironment -> TestResult, testParts: TestPart) =
+type UnitTest (containerPath: string, containerName: string, testName: string, tags: TestTag seq, test: FrameworkEnvironment -> TestResult, testParts: TestPart, location: CodeLocation) =
     let setup, tearDown =
         match testParts with
         | EmptyPart -> success, success
         | SetupPart setup -> setup, success
         | TearDownPart tearDown -> success, tearDown
         | Both (setup, tearDown) -> setup, tearDown
-        
-    let fileName =
-        if String.IsNullOrEmpty filePath then ""
-        else
-            System.IO.Path.GetFileName filePath
 
     override this.ToString () =
         let test = this :> ITest
@@ -148,9 +132,9 @@ type UnitTest (filePath: string, containerPath: string, containerName: string, t
         
     member _.ContainerFullName = containerPath
     member _.ContainerName = containerName
-    member _.LineNumber = lineNumber
     member _.Tags = tags
     member _.TestName = testName
+    member _.Location = location
     
     member this.GetExecutor() =
         UnitTestExecutor (this, setup, test, tearDown)
@@ -159,20 +143,18 @@ type UnitTest (filePath: string, containerPath: string, containerName: string, t
     interface ITest with
         member _.ContainerPath with get () = containerPath
         member _.ContainerName with get () = containerName
-        member _.LineNumber with get () = lineNumber
         member _.Tags with get () = tags
         member _.TestName with get () = testName
-        member _.FileName with get () = fileName
-        member _.FilePath with get () = filePath
         
         member this.GetExecutor() = this.GetExecutor ()
+        member this.Location with get () = location
             
 type TestBuilder (containerPath: string, containerName: string) =
-    member _.Test(testName: string, action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        UnitTest (path, containerPath , containerName, testName, lineNumber, [], action, part) :> ITest
+    member _.Test(testName: string, action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        UnitTest (containerPath, containerName, testName, [], action, part, buildLocation fullPath lineNumber) :> ITest
     
-    member this.Test (testName: string, action: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.Test(testName, action, EmptyPart, path, lineNumber)
+    member this.Test (testName: string, action: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test(testName, action, EmptyPart, fullPath, lineNumber)
     
 type TestContainerBuilder () =
     member _.Container (containerPath: string, containerName: string) =

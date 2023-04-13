@@ -4,6 +4,7 @@ module Archer.MicroLang.Tests.TestHelpers
 open System
 open Archer
 open Archer.CoreTypes.InternalTypes
+open Archer.MicroLang.Lang
 
 let getNoFrameworkInfoFromExecution (test: ITestExecutor) =
     {
@@ -11,3 +12,9 @@ let getNoFrameworkInfoFromExecution (test: ITestExecutor) =
         FrameworkVersion = Version "0.0.0.0"
         TestInfo = test.Parent 
     }
+    
+let ignoreLocation () = {
+    FilePath = ignoreString ()
+    FileName = ignoreString ()
+    LineNumber = ignoreInt ()
+}

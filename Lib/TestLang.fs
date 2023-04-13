@@ -29,12 +29,6 @@ let buildDummyExecutor (testAction: (FrameworkEnvironment -> TestResult) option)
     let test = buildDummyTest testAction parts
     
     test.GetExecutor ()
-    
-let notRunGeneralFailure = "Not Run" |> GeneralFailure |> TestFailure
-
-let notRunExpectation = { Expected = "Not to have been run"; Actual = "Was run" } |> VerificationFailure
-
-let notRunValidationFailure = notRunExpectation |> TestFailure
 
 let reportFailures (failures: TestFailContainer list) =
     let rec reportFailures (failures: TestFailContainer list) depth =
@@ -45,6 +39,19 @@ let reportFailures (failures: TestFailContainer list) =
             }
             |> fun items -> System.String.Join ("", items)
             
+        let rec deconstruct (test: ITest) failure =
+            match failure with
+            | CancelFailure -> test.Location, $"%A{CancelFailure}"
+            | CombinationFailure (a, b) -> test.Location, $"%A{(a, b)}"
+            | ExceptionFailure ex -> test.Location, $"%A{ex}"
+            | GeneralFailure (message, codeLocation) -> codeLocation, $"GeneralFailure (%s{message})"
+            | SetupFailure (message, codeLocation) -> codeLocation, $"SetupFailure (%s{message})"
+            | VerificationFailure (verificationInfo, codeLocation) -> codeLocation, $"VerificationFailure (%A{verificationInfo})"
+            | FailureWithMessage (message, testingFailure) ->
+                let loc, m = deconstruct test testingFailure
+                loc, $"%s{m} \"%s{message}\""
+            | TearDownFailure (message, codeLocation) -> codeLocation, $"TearDownFailure (%s{message})"
+            
         failures
         |> List.iter (fun failure ->
             match failure with
@@ -52,11 +59,14 @@ let reportFailures (failures: TestFailContainer list) =
             | FailedTests tests ->
                 tests
                 |> List.iter (fun (result, test) ->
+                    let location, failure =
+                        deconstruct test result
+                        
                     printfn $"%s{indent}----------------------"
                     printfn $"%s{indent}%s{test.TestName}"
-                    printfn $"%s{indent}\t%A{result}"
+                    printfn $"%s{indent}\t%A{failure}"
                     printfn ""
-                    printfn $"%s{indent}%s{System.IO.Path.Combine (test.FilePath, test.FileName)}(%d{test.LineNumber})"
+                    printfn $"%s{indent}%s{System.IO.Path.Combine (location.FilePath, location.FileName)}(%d{location.LineNumber})"
                 )
             | FailContainer(name, testFailContainers) ->
                 printfn $"%s{indent}%s{name}"
@@ -80,7 +90,7 @@ let reportIgnores (ignored: TestIgnoreContainer list) =
             | EmptyIgnore -> ()
             | IgnoredTests tests ->
                 tests
-                |> List.iter (fun (message, test) ->
+                |> List.iter (fun (message, location, test) ->
                     let msg =
                         match message with
                         | Some s -> s
@@ -90,7 +100,7 @@ let reportIgnores (ignored: TestIgnoreContainer list) =
                     printfn $"%s{indent}%s{test.TestName}"
                     printfn $"%s{indent}\tIgnored %s{msg}"
                     printfn ""
-                    printfn $"%s{indent}%s{System.IO.Path.Combine (test.FilePath, test.FileName)}(%d{test.LineNumber})"
+                    printfn $"%s{indent}%s{System.IO.Path.Combine (location.FilePath, location.FileName)}(%d{location.LineNumber})"
                 )
             | IgnoreContainer(name, testIgnoreContainers) ->
                 printfn $"%s{indent}%s{name}"

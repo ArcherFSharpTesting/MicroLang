@@ -8,23 +8,6 @@ open Archer.MicroLang
 let private container = suite.Container ("TestingLibrary", "UnitTestExecutor StartExecution should")
 
 let ``Test Cases`` = [
-    container.Test ("be raised when test is executed", fun _ ->
-        let executor = buildDummyExecutor None None
-        
-        let mutable result = notRunGeneralFailure
-        executor.StartExecution.AddHandler (CancelDelegate (fun tst _ ->
-                result <- tst |> expectsToBe executor.Parent
-            )
-        )
-        
-        executor
-        |> getNoFrameworkInfoFromExecution
-        |>executor.Execute
-        |> ignore
-        
-        result
-    )
-    
     container.Test ("prevent the call of the test setup if canceled", fun _ ->
         let mutable result = TestSuccess
         
@@ -37,8 +20,12 @@ let ``Test Cases`` = [
             
         let executor = buildDummyExecutor None setupPart
         
-        executor.StartExecution.Add (fun args ->
-            args.Cancel <- true
+        executor.TestLifecycleEvent
+        |> Event.add (fun args ->
+            match args with
+            | TestExecutionStarted cancelEventArgs ->
+                cancelEventArgs.Cancel <- true
+            | _ -> ()
         )
         
         executor
@@ -58,8 +45,12 @@ let ``Test Cases`` = [
             
         let executor = buildDummyExecutor (Some testAction) None
         
-        executor.StartExecution.Add (fun args ->
-            args.Cancel <- true
+        executor.TestLifecycleEvent
+        |> Event.add (fun args ->
+            match args with
+            | TestExecutionStarted cancelEventArgs ->
+                cancelEventArgs.Cancel <- true
+            | _ -> ()
         )
         
         executor
@@ -73,13 +64,17 @@ let ``Test Cases`` = [
     container.Test ("should cause execution to return a CancelError if canceled", fun _ ->
         let executor = buildDummyExecutor None None
         
-        executor.StartExecution.Add (fun args ->
-            args.Cancel <- true
+        executor.TestLifecycleEvent
+        |> Event.add (fun args ->
+            match args with
+            | TestExecutionStarted cancelEventArgs ->
+                cancelEventArgs.Cancel <- true
+            | _ -> ()
         )
         
         executor
         |> getNoFrameworkInfoFromExecution
         |> executor.Execute
-        |> expectsToBe (TestFailure CancelFailure)
+        |> expects.ToBe (TestFailure CancelFailure)
     )
 ]
