@@ -167,7 +167,7 @@ type TestBuilder (containerPath: string, containerName: string) =
 
     
 type TestContainerBuilder () =
-    member _.Container ([<Optional; DefaultParameterValue("")>]containerName: string, [<Optional; DefaultParameterValue("")>]containerPath: string) =
+    member _.Container ([<Optional; DefaultParameterValue("")>]containerPath: string, [<Optional; DefaultParameterValue("")>]containerName: string) =
         let containerName, containerPath =
             if containerName |> String.IsNullOrWhiteSpace || containerPath |> String.IsNullOrWhiteSpace then
                 let trace = StackTrace ()
