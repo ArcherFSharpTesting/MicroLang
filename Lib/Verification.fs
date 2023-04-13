@@ -90,8 +90,6 @@ let combineResultIgnoring defaultError a b =
     | TestIgnored _ as ing, _
     | _, (TestIgnored _ as ing) -> ing
     
-    //| TestFailure tfa, TestFailure tfb -> CombinationFailure (tfa, tfb) |> TestFailure
-    
 let andResult = combineResultIgnoring TestSuccess
 
 let orResult a b =
