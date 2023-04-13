@@ -48,14 +48,16 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: Framework
         testLifecycleEvent.Trigger (parent, TestEndSetup (testResult, cancelEventArgs))
         cancelEventArgs
         
-    let raiseTestStart capture env cancelEventArgs =
+    let raiseTestStart lastResult capture env cancelEventArgs =
         testLifecycleEvent.Trigger (parent, TestStart cancelEventArgs)
-        if cancelEventArgs |> shouldContinue then
+        
+        if cancelEventArgs |> shouldContinue && lastResult = TestSuccess then
             test env |> capture
-            cancelEventArgs
-        else
+        elif lastResult = TestSuccess then
             testCancelFailure |> capture
-            cancelEventArgs
+        
+        cancelEventArgs
+        
         
     let raiseTestEnd result arg =
         testLifecycleEvent.Trigger (parent, TestEnd result)
@@ -77,19 +79,17 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: Framework
         
         let writeResult value =
             match result, value with
-            | TestFailure a, TestFailure b ->
-                result <- CombinationFailure (a, b) |> TestFailure
             | TestFailure _ as failure, _
             | _, (TestFailure _ as failure) -> result <- failure
             | Ignored _ as ing, _
             | _, (Ignored _ as ing) -> result <- ing
-            | _ -> ()
+            | _ -> result <- TestSuccess
             
         CancelEventArgs ()
         |> raiseStartExecution
         |> raiseStartSetup writeResult
         |> raiseEndSetup result
-        |> raiseTestStart writeResult env
+        |> raiseTestStart result writeResult env
         |> raiseTestEnd result
         |> raiseStartTearDown writeResult
         |> raiseEndExecution result

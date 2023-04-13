@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archer.Bow.Lib" Version="0.0.9.4" />
+    <PackageReference Include="Archer.Bow.Lib" Version="0.0.9.6" />
     <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.10" />
     <PackageReference Include="whats-your-version" Version="2.1.0" />
   </ItemGroup>

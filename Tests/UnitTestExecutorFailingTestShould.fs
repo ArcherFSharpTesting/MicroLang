@@ -65,23 +65,11 @@ let ``Test Cases`` = [
         
         let test = dummyExecutor None (Some (SetupPart (fun () -> failure)))
         
-        let notRun = expects.GeneralNotRunFailure () |> TestFailure
-        let mutable result = notRun
-        
-        let combineResult = combineResultIgnoring notRun
+        let mutable cnt = 0
         
         test.TestLifecycleEvent
-        |> Event.add (fun args ->
-            let a =
-                match args with
-                | TestEndSetup (testResult, _)
-                | TestEnd testResult
-                | TestEndExecution testResult -> testResult
-                | _ -> result
-                
-            result <-
-                result
-                |> combineResult a
+        |> Event.add (fun _ ->
+            cnt <- cnt + 1
         )
         
         test
@@ -89,7 +77,8 @@ let ``Test Cases`` = [
         |> test.Execute
         |> ignore 
         
-        result
+        cnt
+        |> expects.ToBe 7
     )
     
     container.Test ("Should raise all events even if setup fails", fun _ ->
