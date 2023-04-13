@@ -39,18 +39,37 @@ let reportFailures (failures: TestFailContainer list) =
             }
             |> fun items -> System.String.Join ("", items)
             
-        let rec deconstruct (test: ITest) failure =
+        let deconstruct (test: ITest) failure =
             match failure with
             | CancelFailure -> test.Location, $"%A{CancelFailure}"
-            | CombinationFailure (a, b) -> test.Location, $"%A{(a, b)}"
+            | TestExecutionFailure testExecutionFailure ->
+                let rec deconstructExecution executionFailure =
+                    match executionFailure with
+                    | VerificationFailure (verificationInfo, codeLocation) ->
+                        codeLocation, $"%A{verificationInfo}"
+                    | FailureWithMessage (message, testExecutionFailure) ->
+                        let location, m = deconstructExecution testExecutionFailure
+                        location, $"%s{m} \"%s{message}\""
+                    | TestExceptionFailure e -> test.Location, $"Test Threw exception: %A{e}"
+                    | CombinationFailure (a, b) ->
+                        test.Location, $"%A{(a, b)}"
+                    | OtherFailure (message, codeLocation) ->
+                        codeLocation, $"Other Failure %A{message}"
+                        
+                deconstructExecution testExecutionFailure
             | ExceptionFailure ex -> test.Location, $"%A{ex}"
-            | GeneralFailure (message, codeLocation) -> codeLocation, $"GeneralFailure (%s{message})"
-            | SetupFailure (message, codeLocation) -> codeLocation, $"SetupFailure (%s{message})"
-            | VerificationFailure (verificationInfo, codeLocation) -> codeLocation, $"VerificationFailure (%A{verificationInfo})"
-            | FailureWithMessage (message, testingFailure) ->
-                let loc, m = deconstruct test testingFailure
-                loc, $"%s{m} \"%s{message}\""
-            | TearDownFailure (message, codeLocation) -> codeLocation, $"TearDownFailure (%s{message})"
+            | SetupFailure setupTearDownFailure ->
+                match setupTearDownFailure with
+                | SetupTearDownExceptionFailure ex ->
+                    test.Location, $"Setup Threw Exception: %A{ex}"
+                | GeneralSetupTearDownFailure (message, codeLocation) ->
+                    codeLocation, $"Setup failed: %s{message}"
+            | TearDownFailure setupTearDownFailure ->
+                match setupTearDownFailure with
+                | SetupTearDownExceptionFailure ex ->
+                    test.Location, $"Tear Down Threw Exception: %A{ex}"
+                | GeneralSetupTearDownFailure (message, codeLocation) ->
+                    codeLocation, $"Tear Down failed: %s{message}"
             
         failures
         |> List.iter (fun failure ->

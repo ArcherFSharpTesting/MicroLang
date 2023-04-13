@@ -23,7 +23,9 @@ type Expect () =
         (
             message,
             buildLocation fullPath lineNumber
-        ) |> GeneralFailure
+        )
+        |> OtherFailure
+        |> TestExecutionFailure
         
     member this.AsValidationFailure (expected, actual, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.AsValidationFailure (
@@ -37,13 +39,17 @@ type Expect () =
         (
             results,
             buildLocation fullPath lineNumber
-        ) |> VerificationFailure
+        )
+        |> VerificationFailure
+        |> TestExecutionFailure
         
     member this.AsSetupFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         (
             message,
             buildLocation fullPath lineNumber
-        ) |> SetupFailure
+        )
+        |> GeneralSetupTearDownFailure
+        |> SetupFailure
         
     member this.GeneralNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.AsGeneralFailure ("Not Run", fullPath, lineNumber)
@@ -60,7 +66,21 @@ let combineResultIgnoring defaultError a b =
     | _, var when var = defaultError -> a
     | TestSuccess, _ -> b
     | _, TestSuccess -> a
-    | TestFailure tfa, TestFailure tfb -> CombinationFailure (tfa, tfb) |> TestFailure
+    | TestFailure (TestExecutionFailure tfa), TestFailure (TestExecutionFailure tfb) -> CombinationFailure (tfa, tfb) |> TestExecutionFailure |> TestFailure
+    | TestFailure (TestExecutionFailure _) as failure, _
+    | _, (TestFailure (TestExecutionFailure _) as failure) -> failure
+    | TestFailure CancelFailure as failure, _
+    | _, (TestFailure CancelFailure as failure) -> failure
+    | TestFailure (ExceptionFailure _) as failure, _
+    | _, (TestFailure (ExceptionFailure _) as failure) -> failure
+    | TestFailure (SetupFailure _) as failure, _
+    | _, (TestFailure (SetupFailure _) as failure) -> failure
+    | TestFailure (TearDownFailure _) as failure, _
+    | _, (TestFailure (TearDownFailure _) as failure) -> failure
+    | Ignored _ as ing, _
+    | _, (Ignored _ as ing) -> ing
+    
+    //| TestFailure tfa, TestFailure tfb -> CombinationFailure (tfa, tfb) |> TestFailure
     
 let andResult = combineResultIgnoring TestSuccess
 
@@ -74,6 +94,7 @@ let combineError = combineResultIgnoring TestSuccess
         
 let withMessage message result =
     match result with
+    | TestFailure (TestExecutionFailure f) -> FailureWithMessage (message, f) |> TestExecutionFailure |> TestFailure
     | TestSuccess
-    | Ignored _ -> result
-    | TestFailure f -> FailureWithMessage (message, f) |> TestFailure
+    | Ignored _
+    | TestFailure _ -> result
