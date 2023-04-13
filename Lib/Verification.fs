@@ -48,6 +48,9 @@ type Expect () =
     member this.GeneralNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.AsGeneralFailure ("Not Run", fullPath, lineNumber)
         
+    member this.NotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.AsValidationFailure ({ Expected = "Not to have been run"; Actual = "Was run" }, fullPath, lineNumber)
+        
 let expects = Expect ()
                 
 
@@ -74,10 +77,3 @@ let withMessage message result =
     | TestSuccess
     | Ignored _ -> result
     | TestFailure f -> FailureWithMessage (message, f) |> TestFailure
-    
-let notRunGeneralFailure = "Not Run" |> expects.AsGeneralFailure
-
-let notRunExpectation = { Expected = "Not to have been run"; Actual = "Was run" } |> expects.AsValidationFailure
-
-let notRunValidationFailure = notRunExpectation |> TestFailure
-

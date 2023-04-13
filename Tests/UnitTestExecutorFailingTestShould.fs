@@ -97,7 +97,7 @@ let ``Test Cases`` = [
         let mutable result = TestSuccess
         
         let testAction _ =
-            result <- notRunValidationFailure
+            result <- expects.NotRunValidationFailure () |> TestFailure
             result
         
         let test = dummyExecutor (Some testAction) (Some (SetupPart (fun () -> failure)))

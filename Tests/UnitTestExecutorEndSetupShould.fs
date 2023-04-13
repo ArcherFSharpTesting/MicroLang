@@ -37,7 +37,7 @@ let ``Test Cases`` = [
         let mutable result = TestSuccess
         
         let testAction _ =
-            result <- notRunValidationFailure
+            result <- expects.NotRunValidationFailure () |> TestFailure
             TestSuccess
             
         let executor = buildDummyExecutor (Some testAction) None
