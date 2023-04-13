@@ -106,8 +106,4 @@ let ``Should raise all events in correct order`` =
         result
     )
     
-let ``Test Cases`` = [
-    ``Should have the creating test as its parent``
-    ``Should return success if test action returns success``
-    ``Should raise all events in correct order``
-]
+let ``Test Cases`` = container.Tests

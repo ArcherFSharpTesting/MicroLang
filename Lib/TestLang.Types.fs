@@ -153,8 +153,11 @@ type UnitTest (containerPath: string, containerName: string, testName: string, t
         member this.Location with get () = location
             
 type TestBuilder (containerPath: string, containerName: string) =
+    let mutable tests : ITest list = []
     member _.Test(action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        UnitTest (containerPath, containerName, testName, [], action, part, buildLocation fullPath lineNumber) :> ITest
+        let test = UnitTest (containerPath, containerName, testName, [], action, part, buildLocation fullPath lineNumber) :> ITest
+        tests <- test::tests
+        test
     
     member this.Test (action: FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test(action, EmptyPart, testName, fullPath, lineNumber)
@@ -164,6 +167,8 @@ type TestBuilder (containerPath: string, containerName: string) =
 
     member this.Test (testName: string, action: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (action, testName, fullPath, lineNumber)
+        
+    member _.Tests with get () = tests
 
     
 type TestContainerBuilder () =

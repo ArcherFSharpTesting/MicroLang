@@ -107,9 +107,4 @@ let ``should carry result of setup action fails`` =
         result
     )
     
-let ``Test Cases`` = [
-    ``carry the result of the StartSetup event``
-    ``prevent the call of the test action if canceled``
-    ``should cause execution to return a CancelError if canceled``
-    ``should carry result of setup action fails``
-]
+let ``Test Cases`` = container.Tests

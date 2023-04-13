@@ -56,10 +56,4 @@ let ``have well formed string representation`` =
         |> expects.ToBe "Container Path <> Container Name <> Test Name"
     )
     
-let ``Test Cases`` = [
-    ``have the test name``
-    ``have the container name``
-    ``have the location``
-    ``have tags``
-    ``have well formed string representation``
-]
+let ``Test Cases`` = container.Tests

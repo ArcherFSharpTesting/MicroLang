@@ -81,9 +81,4 @@ let ``Should not call the test action if setup fails`` =
         result
     )
     
-let ``Test Cases`` = [
-    ``Should return failure if the test action returns failure``
-    ``Should raise all events even if setup fails``
-    ``Should fail test if setup fails``
-    ``Should not call the test action if setup fails``
-]
+let ``Test Cases`` = container.Tests

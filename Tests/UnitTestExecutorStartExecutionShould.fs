@@ -80,8 +80,4 @@ let ``should cause execution to return a CancelError if canceled`` =
         |> expects.ToBe (TestFailure CancelFailure)
     )
     
-let ``Test Cases`` = [
-    ``prevent the call of the test setup if canceled``
-    ``prevent the call of the test action if canceled``
-    ``should cause execution to return a CancelError if canceled``
-]
+let ``Test Cases`` = container.Tests

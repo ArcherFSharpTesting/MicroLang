@@ -28,6 +28,4 @@ let ``be raised when the test is executed`` =
         result
     )
 
-let ``Test Cases`` = [
-    ``be raised when the test is executed``
-]
+let ``Test Cases`` = container.Tests
