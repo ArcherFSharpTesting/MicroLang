@@ -67,9 +67,6 @@ type Expect () =
     member this.ToBeIgnored (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.ToBeIgnored (Some message, fullPath, lineNumber)
         
-    member this.ToBeIgnored([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.ToBeIgnored (None, fullPath, lineNumber)
-        
 let expects = Expect ()
                 
 
