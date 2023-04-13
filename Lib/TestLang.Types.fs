@@ -2,10 +2,13 @@
 
 open System
 open System.ComponentModel
+open System.Diagnostics
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Archer
 open Archer.CoreTypes.InternalTypes
+open Microsoft.FSharp.Collections
+open Microsoft.FSharp.Core
 
 module TypeSupport =
     let success () = TestSuccess
@@ -150,12 +153,17 @@ type UnitTest (containerPath: string, containerName: string, testName: string, t
         member this.Location with get () = location
             
 type TestBuilder (containerPath: string, containerName: string) =
-    member _.Test(testName: string, action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member _.Test(action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         UnitTest (containerPath, containerName, testName, [], action, part, buildLocation fullPath lineNumber) :> ITest
     
-    member this.Test (testName: string, action: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.Test(testName, action, EmptyPart, fullPath, lineNumber)
+    member this.Test (action: FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test(action, EmptyPart, testName, fullPath, lineNumber)
     
 type TestContainerBuilder () =
-    member _.Container (containerPath: string, containerName: string) =
+    member _.Container () =
+        let trace = StackTrace ()
+        let method = trace.GetFrame(1).GetMethod ()
+        let containerName = method.ReflectedType.Name
+        let containerPath = method.ReflectedType.Namespace |> fun s -> s.Split ([|"$"|], StringSplitOptions.RemoveEmptyEntries) |> Array.last
+        
         TestBuilder (containerPath, containerName)

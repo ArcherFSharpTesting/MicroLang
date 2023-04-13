@@ -1,4 +1,4 @@
-module Archer.MicroLang.Tests.``UnitTest Base Case``
+module Archer.MicroLang.Tests.``UnitTest should``
 
 open Archer.CoreTypes.InternalTypes
 
@@ -6,18 +6,19 @@ open Archer
 open Archer.MicroLang
 open Archer.MicroLang.Types
 
-let private container = suite.Container ("TestingLibrary", "UnitTest should")
+let private container = suite.Container ()
 
-let ``Test Cases`` = [
-    container.Test ("have the test name", fun _ ->
+let ``have the test name`` =
+    container.Test (fun _ ->
         let expectedName = "My Test Name"
         let test = UnitTest (ignoreString (), ignoreString (), expectedName, [], successfulTest, EmptyPart, ignoreLocation ()) :> ITest
         
         test.TestName
         |> expects.ToBe expectedName
     )
-
-    container.Test ("have the container name", fun _ ->
+    
+let ``have the container name`` =
+    container.Test (fun _ ->
         let expectedName = "My Container Name"
         let test = UnitTest (ignoreString(), expectedName, ignoreString (), [], successfulTest, EmptyPart, ignoreLocation ()) :> ITest
         
@@ -25,8 +26,8 @@ let ``Test Cases`` = [
         |> expects.ToBe expectedName
     )
     
-    container.Test ("have the location", fun _ ->
-        let expectedLineNumber = 66
+let ``have the location`` =
+    container.Test (fun _ ->
         let location = {
             FilePath = ignoreString ()
             FileName = ignoreString ()
@@ -38,7 +39,8 @@ let ``Test Cases`` = [
         |> expects.ToBe location
     )
     
-    container.Test ("have tags", fun _ ->
+let ``have tags`` =
+    container.Test (fun _ ->
         let tags = [Category "My Test"]
         let test = UnitTest (ignoreString (), ignoreString (), ignoreString (), tags, successfulTest, EmptyPart, ignoreLocation ()) :> ITest
         
@@ -46,10 +48,18 @@ let ``Test Cases`` = [
         |> expects.ToBe tags
     )
     
-    container.Test ("have well formed string representation", fun _ ->
+let ``have well formed string representation`` =
+    container.Test (fun _ ->
         let test = UnitTest ("Container Path", "Container Name", "Test Name", [], successfulTest, EmptyPart, ignoreLocation ())
         
         test.ToString ()
         |> expects.ToBe "Container Path <> Container Name <> Test Name"
     )
+    
+let ``Test Cases`` = [
+    ``have the test name``
+    ``have the container name``
+    ``have the location``
+    ``have tags``
+    ``have well formed string representation``
 ]

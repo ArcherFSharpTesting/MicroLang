@@ -17,13 +17,13 @@ let ignorePath _ = $"%s{ignoreString ()}.test"
 let successfulTest _ = TestSuccess
         
 let buildDummyTest (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
-    let c = suite.Container (ignoreString (), ignoreString ())
+    let c = suite.Container ()
         
     match parts, testAction with
-    | None, None -> c.Test (ignoreString (), successfulTest, EmptyPart, ignoreString (), ignoreInt ())
-    | None, Some action -> c.Test (ignoreString (), action, EmptyPart, ignoreString (), ignoreInt ())
-    | Some part, None -> c.Test (ignoreString (), successfulTest, part, ignoreString (), ignoreInt ())
-    | Some part, Some action -> c.Test (ignoreString (), action, part, ignoreString (), ignoreInt ())
+    | None, None -> c.Test (successfulTest, EmptyPart, ignoreString (), ignoreString (), ignoreInt ())
+    | None, Some action -> c.Test (action, EmptyPart, ignoreString (), ignoreString (), ignoreInt ())
+    | Some part, None -> c.Test (successfulTest, part, ignoreString (), ignoreString (), ignoreInt ())
+    | Some part, Some action -> c.Test (action, part, ignoreString (), ignoreString (), ignoreInt ())
     
 let buildDummyExecutor (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
     let test = buildDummyTest testAction parts

@@ -1,4 +1,4 @@
-module Archer.MicroLang.Tests.``UnitTestExecutor Happy Path``
+module Archer.MicroLang.Tests.``UnitTestExecutor happy path``
 
 open System
 open Archer
@@ -7,17 +7,18 @@ open Archer.CoreTypes.InternalTypes.FrameworkTypes
 open Archer.MicroLang
 open Microsoft.FSharp.Control
 
-let private container = suite.Container ("TestLibrary", "UnitTestExecutor happy path")
+let private container = suite.Container ()
 
-let ``Test Cases`` = [
-    container.Test("Should have the creating test as its parent", fun _ ->
+let ``Should have the creating test as its parent`` =
+    container.Test(fun _ ->
         let executor = buildDummyExecutor None None
         
         executor.Parent
         |> expects.ToBe executor.Parent
     )
     
-    container.Test ("Should return success if test action returns success", fun _ ->
+let ``Should return success if test action returns success`` =
+    container.Test (fun _ ->
         let test = buildDummyExecutor None None
         
         test
@@ -25,7 +26,8 @@ let ``Test Cases`` = [
         |> test.Execute 
     )
     
-    container.Test("Should raise all events in correct order", fun _ ->
+let ``Should raise all events in correct order`` =
+    container.Test(fun _ ->
         let executor = buildDummyExecutor None None
         
         let mutable cnt = 0
@@ -103,4 +105,9 @@ let ``Test Cases`` = [
         
         result
     )
+    
+let ``Test Cases`` = [
+    ``Should have the creating test as its parent``
+    ``Should return success if test action returns success``
+    ``Should raise all events in correct order``
 ]

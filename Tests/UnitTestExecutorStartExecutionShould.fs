@@ -1,14 +1,14 @@
-module Archer.MicroLang.Tests.``UnitTestExecutor StartExecution``
+module Archer.MicroLang.Tests.``UnitTestExecutor StartExecution should``
 
 open Archer.MicroLang.Types
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
 
-let private container = suite.Container ("TestingLibrary", "UnitTestExecutor StartExecution should")
+let private container = suite.Container ()
 
-let ``Test Cases`` = [
-    container.Test ("prevent the call of the test setup if canceled", fun _ ->
+let ``prevent the call of the test setup if canceled`` =
+    container.Test (fun _ ->
         let mutable result = TestSuccess
         
         let setupPart =
@@ -36,7 +36,8 @@ let ``Test Cases`` = [
         result
     )
     
-    container.Test ("prevent the call of the test action if canceled", fun _ ->
+let ``prevent the call of the test action if canceled`` =
+    container.Test (fun _ ->
         let mutable result = TestSuccess
         
         let testAction _ =
@@ -61,7 +62,8 @@ let ``Test Cases`` = [
         result
     )
     
-    container.Test ("should cause execution to return a CancelError if canceled", fun _ ->
+let ``should cause execution to return a CancelError if canceled`` =
+    container.Test (fun _ ->
         let executor = buildDummyExecutor None None
         
         executor.TestLifecycleEvent
@@ -77,4 +79,9 @@ let ``Test Cases`` = [
         |> executor.Execute
         |> expects.ToBe (TestFailure CancelFailure)
     )
+    
+let ``Test Cases`` = [
+    ``prevent the call of the test setup if canceled``
+    ``prevent the call of the test action if canceled``
+    ``should cause execution to return a CancelError if canceled``
 ]

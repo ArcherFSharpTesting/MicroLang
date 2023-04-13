@@ -1,4 +1,4 @@
-module Archer.MicroLang.Tests.``UnitTestExecutor StartSetup``
+module Archer.MicroLang.Tests.``UnitTestExecutor StartSetup should``
 
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
@@ -6,10 +6,10 @@ open Archer
 open Archer.MicroLang.Types
 open Microsoft.FSharp.Control
 
-let private container = suite.Container ("TestingLibrary", "UnitTestExecutor StartSetup should")
+let private container = suite.Container ()
 
-let ``Test Cases`` = [
-    container.Test ("prevent the call of the test setup if canceled", fun _ ->
+let ``prevent the call of the test setup if canceled`` =
+    container.Test (fun _ ->
         let mutable result = TestSuccess
         
         let setupPart =
@@ -37,7 +37,8 @@ let ``Test Cases`` = [
         result
     )
     
-    container.Test ("prevent the call of the test action if canceled", fun _ ->
+let ``prevent the call of the test action if canceled`` = 
+    container.Test (fun _ ->
         let mutable result = TestSuccess
         
         let testAction _ =
@@ -62,7 +63,8 @@ let ``Test Cases`` = [
         result
     )
     
-    container.Test ("prevent the call of the test action if failed", fun _ ->
+let ``prevent the call of the test action if failed`` = 
+    container.Test (fun _ ->
         let mutable result = TestSuccess
         
         let testAction _ =
@@ -90,7 +92,8 @@ let ``Test Cases`` = [
         result
     )
     
-    container.Test ("should cause execution to return a CancelError if canceled", fun _ ->
+let ``should cause execution to return a CancelError if canceled`` = 
+    container.Test (fun _ ->
         let executor = buildDummyExecutor None None
         
         executor.TestLifecycleEvent
@@ -106,4 +109,10 @@ let ``Test Cases`` = [
         |> executor.Execute
         |> expects.ToBe (TestFailure CancelFailure)
     )
+    
+let ``Test Cases`` = [
+    ``prevent the call of the test setup if canceled``
+    ``prevent the call of the test action if canceled``
+    ``prevent the call of the test action if failed``
+    ``should cause execution to return a CancelError if canceled``
 ]

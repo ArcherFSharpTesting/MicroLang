@@ -1,4 +1,4 @@
-module Archer.MicroLang.Tests.``UnitTestExecutor EndSetup``
+module Archer.MicroLang.Tests.``UnitTestExecutor EndSetup should``
 
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
@@ -6,10 +6,10 @@ open Archer.MicroLang.Types
 open Archer
 open Microsoft.FSharp.Control
 
-let private container = suite.Container ("TestingLibrary", "UnitTestExecutor EndSetup should")
+let private container = suite.Container ()
 
-let ``Test Cases`` = [
-    container.Test ("carry the result of the StartSetup event", fun _ ->
+let ``carry the result of the StartSetup event`` = 
+    container.Test (fun _ ->
         let expectedFailure = "Failures abound" |> expects.AsSetupFailure |> TestFailure
         let setupPart = SetupPart (fun _ -> expectedFailure) |> Some
         let executor = buildDummyExecutor None setupPart
@@ -33,7 +33,8 @@ let ``Test Cases`` = [
         |> expects.ToBe expectedFailure
     )
     
-    container.Test ("prevent the call of the test action if canceled", fun _ ->
+let ``prevent the call of the test action if canceled`` =
+    container.Test (fun _ ->
         let mutable result = TestSuccess
         
         let testAction _ =
@@ -57,8 +58,9 @@ let ``Test Cases`` = [
         
         result
     )
-    
-    container.Test ("should cause execution to return a CancelError if canceled", fun _ ->
+        
+let ``should cause execution to return a CancelError if canceled`` = 
+    container.Test (fun _ ->
         let executor = buildDummyExecutor None None
         
         executor.TestLifecycleEvent
@@ -75,7 +77,8 @@ let ``Test Cases`` = [
         |> expects.ToBe (TestFailure CancelFailure)
     )
     
-    container.Test ("should carry result of setup action fails", fun _ ->
+let ``should carry result of setup action fails`` = 
+    container.Test (fun _ ->
         let expectedFailure = "This is an intended failure" |> expects.AsSetupFailure |> TestFailure
         let setupAction =
             (fun _ -> expectedFailure)
@@ -103,4 +106,10 @@ let ``Test Cases`` = [
         
         result
     )
+    
+let ``Test Cases`` = [
+    ``carry the result of the StartSetup event``
+    ``prevent the call of the test action if canceled``
+    ``should cause execution to return a CancelError if canceled``
+    ``should carry result of setup action fails``
 ]

@@ -1,13 +1,13 @@
-module Archer.MicroLang.Tests.``UnitTestExecutor EndExecution``
+module Archer.MicroLang.Tests.``UnitTestExecutor EndExecution should``
     
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
 
-let private container = suite.Container ("TestLibrary", "UnitTestExecutor EndExecution should")
+let private container = suite.Container ()
 
-let ``Test Cases`` = [
-    container.Test ("be raised when the test is executed", fun _ ->
+let ``be raised when the test is executed`` =
+    container.Test (fun _ ->
         let executor = buildDummyExecutor None None
         
         let mutable result = expects.GeneralNotRunFailure () |> TestFailure
@@ -27,4 +27,7 @@ let ``Test Cases`` = [
         
         result
     )
+
+let ``Test Cases`` = [
+    ``be raised when the test is executed``
 ]

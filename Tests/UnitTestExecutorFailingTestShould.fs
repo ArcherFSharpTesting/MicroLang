@@ -1,4 +1,4 @@
-module Archer.MicroLang.Tests.``UnitTestExecutor With a Failing Test``
+module Archer.MicroLang.Tests.``UnitTestExecutor Failing Test``
 
 open System
 open Archer
@@ -6,15 +6,15 @@ open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
 open Archer.MicroLang.Types
 
-let private container = suite.Container ("TestingLibrary", "UnitTestExecutor Failing Test")
+let private container = suite.Container ()
 
 let private dummyExecutor (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
     let test = buildDummyTest testAction parts
         
     test.GetExecutor ()
     
-let ``Test Cases`` = [
-    container.Test ("Should return failure if the test action returns failure", fun _ ->
+let ``Should return failure if the test action returns failure`` =
+    container.Test (fun _ ->
         let expectedResult = { Actual = "Things don't add up"; Expected = "nice and tidy" } |> expects.AsValidationFailure |> TestFailure
         let test = dummyExecutor (Some (fun _ -> expectedResult)) None
         
@@ -27,7 +27,8 @@ let ``Test Cases`` = [
         |> expects.ToBe expectedResult
     )
     
-    container.Test ("Should raise all events even if setup fails", fun _ ->
+let ``Should raise all events even if setup fails`` =
+    container.Test (fun _ ->
         let failure = "Setup Fail" |> expects.AsSetupFailure |> TestFailure
         let test = dummyExecutor None (Some (SetupPart (fun () -> failure)))
         
@@ -47,7 +48,8 @@ let ``Test Cases`` = [
         |> expects.ToBe 7
     )
     
-    container.Test ("Should raise all events even if setup fails", fun _ ->
+let ``Should fail test if setup fails`` =
+    container.Test (fun _ ->
         let failure = "Setup Fail" |> expects.AsSetupFailure |> TestFailure
         let test = dummyExecutor None (Some (SetupPart (fun () -> failure)))
         
@@ -60,28 +62,8 @@ let ``Test Cases`` = [
         |> expects.ToBe failure
     )
     
-    container.Test ("Should raise all events even if setup fails", fun _ ->
-        let failure = "Setup Fail" |> expects.AsSetupFailure |> TestFailure
-        
-        let test = dummyExecutor None (Some (SetupPart (fun () -> failure)))
-        
-        let mutable cnt = 0
-        
-        test.TestLifecycleEvent
-        |> Event.add (fun _ ->
-            cnt <- cnt + 1
-        )
-        
-        test
-        |> getNoFrameworkInfoFromExecution
-        |> test.Execute
-        |> ignore 
-        
-        cnt
-        |> expects.ToBe 7
-    )
-    
-    container.Test ("Should raise all events even if setup fails", fun _ ->
+let ``Should not call the test action if setup fails`` =
+    container.Test (fun _ ->
         let failure = "Setup Fail" |> expects.AsSetupFailure |> TestFailure
         let mutable result = TestSuccess
         
@@ -98,4 +80,10 @@ let ``Test Cases`` = [
         
         result
     )
+    
+let ``Test Cases`` = [
+    ``Should return failure if the test action returns failure``
+    ``Should raise all events even if setup fails``
+    ``Should fail test if setup fails``
+    ``Should not call the test action if setup fails``
 ]
