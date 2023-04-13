@@ -31,7 +31,7 @@ module TypeSupport =
     
 open TypeSupport
         
-type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TestResult) as this=
+type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TestResult) =
     let testLifecycleEvent = Event<TestExecutionDelegate, TestEventLifecycle> ()
     
     let raiseStartExecution cancelEventArgs =
@@ -39,7 +39,7 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: Framework
         cancelEventArgs
         
     let raiseStartSetup capture cancelEventArgs =
-        testLifecycleEvent.Trigger (parent, TestSetupStarted cancelEventArgs)
+        testLifecycleEvent.Trigger (parent, TestStartSetup cancelEventArgs)
         if cancelEventArgs |> shouldContinue then
             setup () |> capture
             cancelEventArgs
@@ -60,7 +60,6 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: Framework
             testCancelFailure |> capture
         
         cancelEventArgs
-        
         
     let raiseTestEnd result arg =
         testLifecycleEvent.Trigger (parent, TestEnd result)

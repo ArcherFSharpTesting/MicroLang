@@ -48,7 +48,7 @@ let ``Should raise all events in correct order`` =
                 cnt <- cnt + 1
                 result <-
                     r |> combineResult result
-            | TestSetupStarted _ ->
+            | TestStartSetup _ ->
                 let r =
                     cnt
                     |> expects.ToBe 1
