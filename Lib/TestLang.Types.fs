@@ -11,12 +11,14 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
 
 module TypeSupport =
-    let success () = TestSuccess
+    let successfulTest _ = TestSuccess
+    let successfulSetup _ = SetupSuccess
+    let successfulTeardown _ = TeardownSuccess
     
     let shouldContinue (cancelEventArgs: CancelEventArgs) =
         cancelEventArgs.Cancel |> not
         
-    let testCancelFailure = CancelFailure |> TestFailure
+    let testCancelFailure = GeneralCancelFailure |> GeneralExecutionFailure
     
     let buildLocation (fullPath: string) lineNumber =
         let fileInfo = System.IO.FileInfo fullPath
@@ -31,71 +33,55 @@ module TypeSupport =
     
 open TypeSupport
         
-type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TestResult) =
+type UnitTestExecutor (parent: ITest, setup: unit -> SetupResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TeardownResult) =
     let testLifecycleEvent = Event<TestExecutionDelegate, TestEventLifecycle> ()
     
-    let raiseStartExecution cancelEventArgs =
-        testLifecycleEvent.Trigger (parent, TestStartExecution cancelEventArgs)
-        cancelEventArgs
+    let maybeDo getEventArgs predicate ok fail ((previousResult, cancelEventArgs: CancelEventArgs) as resultArgs) =
+        let args = getEventArgs resultArgs
+        testLifecycleEvent.Trigger (parent, args)
+            
+        match previousResult, cancelEventArgs.Cancel with
+        | Some previousResult, false ->
+            if predicate previousResult then
+                previousResult |> ok |> Some, cancelEventArgs
+            else
+                previousResult |> fail |> Some, cancelEventArgs
+        | _ -> None, cancelEventArgs
+    
+    let startExecution cancelEventArgs =
+        maybeDo (snd >> TestStartExecution) (fun _ -> true) (fun () -> ()) (fun () -> ()) (Some (), cancelEventArgs)
         
-    let raiseStartSetup capture cancelEventArgs =
-        testLifecycleEvent.Trigger (parent, TestStartSetup cancelEventArgs)
-        if cancelEventArgs |> shouldContinue then
-            setup () |> capture
-            cancelEventArgs
-        else
-            testCancelFailure |> capture
-            cancelEventArgs
+    let startSetup =
+        maybeDo (snd >> TestStartSetup) (fun _ -> true) setup successfulSetup
         
-    let raiseEndSetup testResult cancelEventArgs =
-        testLifecycleEvent.Trigger (parent, TestEndSetup (testResult, cancelEventArgs))
-        cancelEventArgs
-        
-    let raiseTestStart lastResult capture env cancelEventArgs =
-        testLifecycleEvent.Trigger (parent, TestStart cancelEventArgs)
-        
-        if cancelEventArgs |> shouldContinue && lastResult = TestSuccess then
-            test env |> capture
-        elif lastResult = TestSuccess then
-            testCancelFailure |> capture
-        
-        cancelEventArgs
-        
-    let raiseTestEnd result arg =
-        testLifecycleEvent.Trigger (parent, TestEnd result)
-        arg
-        
-    let raiseStartTearDown capture arg =
-        testLifecycleEvent.Trigger (parent, TestStartTearDown)
-        tearDown () |> capture
-        arg
-        
-    let raiseEndExecution result arg =
-        testLifecycleEvent.Trigger (parent, TestEndExecution result)
-        arg
+    let endSetup =
+        let buildArgs (previousResult, cancelEventArgs) =
+            let result =
+                match previousResult with
+                | Some result -> result
+                | None -> SetupTeardownCanceledFailure |> SetupFailure
+                
+            TestEndSetup (result, cancelEventArgs)
+            
+        maybeDo buildArgs (fun _ -> true) id id
+         
+    let runTest environment =
+        maybeDo (snd >> TestStart) (fun (result, _) -> result = SetupSuccess) (fun _ -> environment |> test |> TestExecutionResult) (fun setupResult -> setupResult |> SetupE)
         
     member _.Parent with get () = parent
     
     member _.Execute env =
-        let mutable result = TestSuccess
+        let result = TestSuccess
         
-        let writeResult value =
-            match result, value with
-            | TestFailure _ as failure, _
-            | _, (TestFailure _ as failure) -> result <- failure
-            | TestIgnored _ as ing, _
-            | _, (TestIgnored _ as ing) -> result <- ing
-            | _ -> result <- TestSuccess
-            
-        CancelEventArgs ()
-        |> raiseStartExecution
-        |> raiseStartSetup writeResult
-        |> raiseEndSetup result
-        |> raiseTestStart result writeResult env
-        |> raiseTestEnd result
-        |> raiseStartTearDown writeResult
-        |> raiseEndExecution result
-        |> ignore
+        // CancelEventArgs ()
+        // |> raiseStartExecution
+        // |> raiseStartSetup writeResult
+        // |> raiseEndSetup result
+        // |> raiseTestStart result writeResult env
+        // |> raiseTestEnd result
+        // |> raiseStartTearDown writeResult
+        // |> raiseEndExecution result
+        // |> ignore
         
         result
         
@@ -110,16 +96,16 @@ type UnitTestExecutor (parent: ITest, setup: unit -> TestResult, test: Framework
             
 type TestPart =
     | EmptyPart
-    | SetupPart of (unit -> TestResult)
-    | TearDownPart of (unit -> TestResult)
-    | Both of setup: (unit -> TestResult) * tearDown: (unit -> TestResult)
+    | SetupPart of (unit -> SetupResult)
+    | TeardownPart of (unit -> TeardownResult)
+    | Both of setup: (unit -> SetupResult) * tearDown: (unit -> TeardownResult)
             
 type UnitTest (containerPath: string, containerName: string, testName: string, tags: TestTag seq, test: FrameworkEnvironment -> TestResult, testParts: TestPart, location: CodeLocation) =
     let setup, tearDown =
         match testParts with
-        | EmptyPart -> success, success
-        | SetupPart setup -> setup, success
-        | TearDownPart tearDown -> success, tearDown
+        | EmptyPart -> successfulSetup, successfulTeardown
+        | SetupPart setup -> setup, successfulTeardown
+        | TeardownPart tearDown -> successfulSetup, tearDown
         | Both (setup, tearDown) -> setup, tearDown
 
     override this.ToString () =
