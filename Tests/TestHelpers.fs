@@ -22,12 +22,12 @@ let ignoreLocation () = {
 let rec getContainerUnderTest _ =
     suite.Container ("Under Test", "Container")
     
-let setupTest _ =
+let setupExecutor _ =
     let container = getContainerUnderTest ()
     let test = container.Test (ignoreString (), successfulTest)
     test.GetExecutor () |> Ok
     
-let setupTestFromResult _ =
+let setupExecutorFromResult _ =
     let testFromResult (testResult: TestResult) =
         let container = getContainerUnderTest ()
         let test = container.Test (ignoreString (), fun _ -> testResult)
@@ -35,7 +35,7 @@ let setupTestFromResult _ =
     
     testFromResult |> Ok
     
-let setupTestFromTestAction _ =
+let setupExecutorFromTestAction _ =
     let testFromAction testAction =
         let container = getContainerUnderTest ()
         let test = container.Test (ignoreString (), testAction)
@@ -43,7 +43,7 @@ let setupTestFromTestAction _ =
     
     testFromAction |> Ok
     
-let setupTestFromSetupResult _ =
+let setupExecutorFromSetupResult _ =
     let testFromSetupAction setupResult =
         let container = getContainerUnderTest ()
         let test = container.Test (ignoreString (), Setup (fun _ -> setupResult), successfulEnvironmentTest)
@@ -51,7 +51,15 @@ let setupTestFromSetupResult _ =
         
     testFromSetupAction |> Ok
     
-let setupTestFromTestActionAndSetupResult _ =
+let setupExecutorFromSetupAction _ =
+    let setupTest setupAction =
+        let container = getContainerUnderTest ()
+        let test = container.Test (ignoreString (), Setup setupAction, successfulEnvironmentTest)
+        test.GetExecutor ()
+    
+    setupTest |> Ok
+    
+let setupExecutorFromTestActionAndSetupResult _ =
     let testBuilder setupResult testAction =
         let container = getContainerUnderTest ()
         let test = container.Test (ignoreString (), Setup (fun _ -> setupResult), testAction)

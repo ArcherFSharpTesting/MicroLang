@@ -9,113 +9,114 @@ open Microsoft.FSharp.Control
 let private container = suite.Container ()
 
 let ``prevent the call of the test setup if canceled`` =
-    container.Test (fun _ ->
-        let mutable result = TestSuccess
+    container.Test (
+        Setup setupExecutorFromSetupAction,
         
-        let setupPart =
-            Setup (fun _ ->
-                result <- expects.NotRunValidationFailure () |> TestFailure
-                Ok ()
+        fun testBuilder _ ->
+            let mutable result = TestSuccess
+            
+            let setupAction =
+                (fun _ ->
+                    result <- expects.NotRunValidationFailure () |> TestFailure
+                    Ok ()
+                )
+                
+            let executor = testBuilder setupAction
+            
+            executor.TestLifecycleEvent
+            |> Event.add (fun args ->
+                match args with
+                | TestStartSetup cancelEventArgs ->
+                    cancelEventArgs.Cancel <- true
+                | _ -> ()
             )
             
-        let container = suite.Container ("Fake", "Container")
-        let test = container.Test (setupPart, successfulEnvironmentTest)
-        let executor = test.GetExecutor ()
-        
-        executor.TestLifecycleEvent
-        |> Event.add (fun args ->
-            match args with
-            | TestStartSetup cancelEventArgs ->
-                cancelEventArgs.Cancel <- true
-            | _ -> ()
-        )
-        
-        executor
-        |> getEmptyEnvironment
-        |> executor.Execute
-        |> ignore
-        
-        result
+            executor
+            |> getEmptyEnvironment
+            |> executor.Execute
+            |> ignore
+            
+            result
     )
     
 let ``prevent the call of the test action if canceled`` = 
-    container.Test (fun _ ->
-        let mutable result = TestSuccess
+    container.Test (
+        Setup setupExecutorFromTestAction,
         
-        let testAction _ =
-            result <- expects.NotRunValidationFailure () |> TestFailure
-            TestSuccess
+        fun testBuilder _ ->
+            let mutable result = TestSuccess
             
-        let container = suite.Container ("fake", "container")
-        let test = container.Test testAction
-        let executor = test.GetExecutor ()
-        
-        executor.TestLifecycleEvent
-        |> Event.add (fun args ->
-            match args with
-            | TestStartSetup cancelEventArgs ->
-                cancelEventArgs.Cancel <- true
-            | _ -> ()
-        )
-        
-        executor
-        |> getEmptyEnvironment
-        |> executor.Execute
-        |> ignore
-        
-        result
+            let testAction _ =
+                result <- expects.NotRunValidationFailure () |> TestFailure
+                TestSuccess
+                
+            let executor = testBuilder testAction
+            
+            executor.TestLifecycleEvent
+            |> Event.add (fun args ->
+                match args with
+                | TestStartSetup cancelEventArgs ->
+                    cancelEventArgs.Cancel <- true
+                | _ -> ()
+            )
+            
+            executor
+            |> getEmptyEnvironment
+            |> executor.Execute
+            |> ignore
+            
+            result
     )
     
 let ``prevent the call of the test action if failed`` = 
-    container.Test (fun _ ->
-        let mutable result = TestSuccess
+    container.Test (
+        Setup setupExecutorFromTestAction,
         
-        let testAction _ =
-            result <- expects.NotRunValidationFailure () |> TestFailure
+        fun testBuilder _ ->
+            let mutable result = TestSuccess
             
-            "Should not have been here"
-            |> expects.AsOtherTestExecutionFailure
-            |> TestFailure
+            let testAction _ =
+                result <- expects.NotRunValidationFailure () |> TestFailure
+                
+                "Should not have been here"
+                |> expects.AsOtherTestExecutionFailure
+                |> TestFailure
+                
+            let executor = testBuilder testAction
             
-        let container = suite.Container ("Fake", "Container")
-        let test = container.Test testAction
+            executor.TestLifecycleEvent
+            |> Event.add (fun args ->
+                match args with
+                | TestStartSetup cancelEventArgs ->
+                    cancelEventArgs.Cancel <- true
+                | _ -> ()
+            )
             
-        let executor = test.GetExecutor ()
-        
-        executor.TestLifecycleEvent
-        |> Event.add (fun args ->
-            match args with
-            | TestStartSetup cancelEventArgs ->
-                cancelEventArgs.Cancel <- true
-            | _ -> ()
-        )
-        
-        executor
-        |> getEmptyEnvironment
-        |> executor.Execute
-        |> ignore
-        
-        result
+            executor
+            |> getEmptyEnvironment
+            |> executor.Execute
+            |> ignore
+            
+            result
     )
     
 let ``should cause execution to return a CancelError if canceled`` = 
-    container.Test (fun _ ->
-        let container = suite.Container ("fake", "container")
-        let test = container.Test successfulTest
-        let executor = test.GetExecutor ()
+    container.Test (
+        Setup setupExecutor,
         
-        executor.TestLifecycleEvent
-        |> Event.add (fun args ->
-            match args with
-            | TestStartSetup cancelEventArgs ->
-                cancelEventArgs.Cancel <- true
-            | _ -> ()
-        )
-        
-        executor
-        |> getEmptyEnvironment
-        |> executor.Execute
-        |> expects.ToBe (GeneralCancelFailure |> GeneralExecutionFailure)
+        fun executor _ ->
+            executor.TestLifecycleEvent
+            |> Event.add (fun args ->
+                match args with
+                | TestStartSetup cancelEventArgs ->
+                    cancelEventArgs.Cancel <- true
+                | _ -> ()
+            )
+            
+            executor
+            |> getEmptyEnvironment
+            |> executor.Execute
+            |> expects.ToBe (GeneralCancelFailure |> GeneralExecutionFailure)
     )
     
 let ``Test Cases`` = container.Tests

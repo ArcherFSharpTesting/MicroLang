@@ -10,7 +10,7 @@ let private container = suite.Container ()
 
 let ``carry the result of the StartSetup event`` = 
     container.Test (
-        Setup setupTestFromSetupResult,
+        Setup setupExecutorFromSetupResult,
         fun testBuilder _ ->
             let expectedFailure = "Failures abound" |> expects.AsGeneralSetupTeardownFailure
             
@@ -38,7 +38,7 @@ let ``carry the result of the StartSetup event`` =
     
 let ``prevent the call of the test action if canceled`` =
     container.Test (
-        Setup setupTestFromTestAction,
+        Setup setupExecutorFromTestAction,
         
         fun testBuilder _ ->
             let mutable result = TestSuccess
@@ -67,7 +67,7 @@ let ``prevent the call of the test action if canceled`` =
         
 let ``should cause execution to return a CancelError if canceled`` = 
     container.Test (
-        Setup setupTest,
+        Setup setupExecutor,
         
         fun executor _ ->
             executor.TestLifecycleEvent
@@ -86,7 +86,7 @@ let ``should cause execution to return a CancelError if canceled`` =
     
 let ``should carry result of setup action fails`` = 
     container.Test (
-        Setup setupTestFromSetupResult,
+        Setup setupExecutorFromSetupResult,
         
         fun testBuilder _ ->
             let expectedFailure = "This is an intended failure" |> expects.AsGeneralSetupTeardownFailure
