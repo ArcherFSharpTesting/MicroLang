@@ -3,12 +3,15 @@ module Archer.MicroLang.Tests.``UnitTestExecutor EndExecution should``
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
+open Archer.MicroLang.Types
 
 let private container = suite.Container ()
 
 let ``be raised when the test is executed`` =
     container.Test (fun _ ->
-        let executor = buildDummyExecutor None None
+        let container = suite.Container ("Bad", "Dummy")
+        let test = container.Test successfulTest
+        let executor = test.GetExecutor ()
         
         let mutable result = expects.GeneralNotRunFailure () |> TestFailure
         
@@ -21,7 +24,7 @@ let ``be raised when the test is executed`` =
         )
         
         executor
-        |> getNoFrameworkInfoFromExecution
+        |> getEmptyEnvironment
         |> executor.Execute
         |> ignore
         

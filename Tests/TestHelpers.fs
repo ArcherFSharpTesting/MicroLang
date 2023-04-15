@@ -6,7 +6,7 @@ open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang.Lang
 
-let getNoFrameworkInfoFromExecution (test: ITestExecutor) =
+let getEmptyEnvironment (test: ITestExecutor) =
     {
         FrameworkName = "No Framework"
         FrameworkVersion = Version "0.0.0.0"

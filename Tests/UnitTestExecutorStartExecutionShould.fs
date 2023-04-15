@@ -12,13 +12,14 @@ let ``prevent the call of the test setup if canceled`` =
         let mutable result = TestSuccess
         
         let setupPart =
-            SetupPart (fun () ->
+            Setup (fun () ->
                 result <- expects.NotRunValidationFailure () |> TestFailure
-                TestSuccess
+                Ok ()
             )
-            |> Some
             
-        let executor = buildDummyExecutor None setupPart
+        let container = suite.Container ("Fake", "Container")
+        let test = container.Test (setupPart, successfulEnvironmentTest)
+        let executor = test.GetExecutor ()
         
         executor.TestLifecycleEvent
         |> Event.add (fun args ->
@@ -29,7 +30,7 @@ let ``prevent the call of the test setup if canceled`` =
         )
         
         executor
-        |> getNoFrameworkInfoFromExecution
+        |> getEmptyEnvironment
         |> executor.Execute
         |> ignore
         
@@ -44,7 +45,9 @@ let ``prevent the call of the test action if canceled`` =
             result <- expects.NotRunValidationFailure () |> TestFailure
             TestSuccess
             
-        let executor = buildDummyExecutor (Some testAction) None
+        let container = suite.Container ("Fake", "Container")
+        let test = container.Test testAction
+        let executor = test.GetExecutor ()
         
         executor.TestLifecycleEvent
         |> Event.add (fun args ->
@@ -55,7 +58,7 @@ let ``prevent the call of the test action if canceled`` =
         )
         
         executor
-        |> getNoFrameworkInfoFromExecution
+        |> getEmptyEnvironment
         |> executor.Execute
         |> ignore
         
@@ -64,7 +67,9 @@ let ``prevent the call of the test action if canceled`` =
     
 let ``should cause execution to return a CancelError if canceled`` =
     container.Test (fun _ ->
-        let executor = buildDummyExecutor None None
+        let container = suite.Container ("Fake", "Container")
+        let test = container.Test successfulTest
+        let executor = test.GetExecutor ()
         
         executor.TestLifecycleEvent
         |> Event.add (fun args ->
@@ -75,9 +80,9 @@ let ``should cause execution to return a CancelError if canceled`` =
         )
         
         executor
-        |> getNoFrameworkInfoFromExecution
+        |> getEmptyEnvironment
         |> executor.Execute
-        |> expects.ToBe (TestFailure CancelFailure)
+        |> expects.ToBe (GeneralCancelFailure |> GeneralExecutionFailure)
     )
     
 let ``Test Cases`` = container.Tests

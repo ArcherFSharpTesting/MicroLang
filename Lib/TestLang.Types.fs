@@ -9,11 +9,13 @@ open Archer
 open Archer.CoreTypes.InternalTypes
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
+open Archer.MicroLang
 
 module TypeSupport =
-    let successfulTest _ = TestSuccess
-    let successfulSetup _ = SetupSuccess
-    let successfulTeardown _ = TeardownSuccess
+    let successfulTest _ _ = TestSuccess
+    
+    let successfulSetup () = Ok () 
+    let successfulTeardown _ _ = Ok ()
     
     let shouldContinue (cancelEventArgs: CancelEventArgs) =
         cancelEventArgs.Cancel |> not
@@ -32,58 +34,107 @@ module TypeSupport =
         }
     
 open TypeSupport
-        
-type UnitTestExecutor (parent: ITest, setup: unit -> SetupResult, test: FrameworkEnvironment -> TestResult, tearDown: unit -> TeardownResult) =
+
+type ExecutionAccumulator<'a> = {
+    SetupResult: Result<'a, SetupTeardownFailure> option
+    TestResult: TestResult option
+    TeardownResult: Result<unit, SetupTeardownFailure> option
+}
+
+type UnitTestExecutor<'a> (parent: ITest, setup: unit -> Result<'a, SetupTeardownFailure>, test: 'a -> FrameworkEnvironment -> TestResult, tearDown: Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>) =
     let testLifecycleEvent = Event<TestExecutionDelegate, TestEventLifecycle> ()
     
-    let maybeDo getEventArgs predicate ok fail ((previousResult, cancelEventArgs: CancelEventArgs) as resultArgs) =
-        let args = getEventArgs resultArgs
-        testLifecycleEvent.Trigger (parent, args)
-            
-        match previousResult, cancelEventArgs.Cancel with
-        | Some previousResult, false ->
-            if predicate previousResult then
-                previousResult |> ok |> Some, cancelEventArgs
+    let startExecution (cancelEventArgs: CancelEventArgs) (acc: ExecutionAccumulator<'a>) =
+        testLifecycleEvent.Trigger (parent, TestStartExecution cancelEventArgs)
+        acc
+        
+    let startSetup (cancelEventArgs: CancelEventArgs) (acc: ExecutionAccumulator<'a>) =
+        let continueOn = cancelEventArgs.Cancel |> not
+        if continueOn then
+            testLifecycleEvent.Trigger (parent, TestStartSetup cancelEventArgs)
+            if cancelEventArgs.Cancel |> not then
+                let result = setup ()
+                { acc with SetupResult = result |> Some }
             else
-                previousResult |> fail |> Some, cancelEventArgs
-        | _ -> None, cancelEventArgs
-    
-    let startExecution cancelEventArgs =
-        maybeDo (snd >> TestStartExecution) (fun _ -> true) (fun () -> ()) (fun () -> ()) (Some (), cancelEventArgs)
-        
-    let startSetup =
-        maybeDo (snd >> TestStartSetup) (fun _ -> true) setup successfulSetup
-        
-    let endSetup =
-        let buildArgs (previousResult, cancelEventArgs) =
-            let result =
-                match previousResult with
-                | Some result -> result
-                | None -> SetupTeardownCanceledFailure |> SetupFailure
-                
-            TestEndSetup (result, cancelEventArgs)
+                acc
+        else
+            acc
             
-        maybeDo buildArgs (fun _ -> true) id id
-         
-    let runTest environment =
-        maybeDo (snd >> TestStart) (fun (result, _) -> result = SetupSuccess) (fun _ -> environment |> test |> TestExecutionResult) (fun setupResult -> setupResult |> SetupE)
+    let endSetup (cancelEventArgs: CancelEventArgs) (acc: ExecutionAccumulator<'a>) =
+        match acc.SetupResult with
+        | Some (Ok _) -> testLifecycleEvent.Trigger (parent, TestEndSetup (SetupSuccess, cancelEventArgs))
+        | Some (Error errorValue) -> testLifecycleEvent.Trigger (parent, TestEndSetup (errorValue |> SetupFailure, cancelEventArgs))
+        | _ -> ()
         
+        acc
+        
+    let startTest (cancelEventArgs: CancelEventArgs) environment (acc: ExecutionAccumulator<'a>) =
+        match cancelEventArgs.Cancel, acc.SetupResult with
+        | true, _ -> acc
+        | _, Some (Ok v) ->
+            testLifecycleEvent.Trigger (parent, TestStart cancelEventArgs)
+            if cancelEventArgs.Cancel then
+                acc
+            else
+                let result = test v environment
+                { acc with TestResult = result |> Some }
+        | _ -> acc
+        
+    let endTest (acc: ExecutionAccumulator<'a>) =
+        match acc.TestResult with
+        | Some result ->
+            testLifecycleEvent.Trigger (parent, TestEnd result)
+            acc
+        | _ -> acc
+        
+    let startTearDown (cancelEventArgs: CancelEventArgs) (acc: ExecutionAccumulator<'a>) =
+        match acc.SetupResult, cancelEventArgs.Cancel with
+        | Some _, _
+        | _, false ->
+            testLifecycleEvent.Trigger (parent, TestStartTeardown)
+            match acc.SetupResult, acc.TestResult with
+            | Some setupResult, testResult ->
+                let result = tearDown setupResult testResult
+                { acc with TeardownResult =  Some result }
+            | _ -> acc
+        | _, true ->
+            acc
+            
+    let endExecution (cancelEventArgs: CancelEventArgs) (acc: ExecutionAccumulator<'a>) =
+        let result = 
+            match cancelEventArgs.Cancel, acc with
+            | true, _ ->
+                GeneralCancelFailure |> GeneralExecutionFailure
+                
+            | _, { SetupResult = Some (Ok _); TestResult = Some testResult; TeardownResult = Some (Ok _) } ->
+                testResult |> TestExecutionResult
+                
+            | _, { SetupResult = Some (Error errorValue); TestResult = _; TeardownResult = _ } ->
+                errorValue |> SetupExecutionFailure
+                
+            | _, { SetupResult = _; TestResult = _; TeardownResult = Some (Error errorValue) } ->
+                errorValue |> TeardownExecutionFailure
+                
+        testLifecycleEvent.Trigger (parent, TestEndExecution result)
+        result
+    
     member _.Parent with get () = parent
     
     member _.Execute env =
-        let result = TestSuccess
+        let cancelEventArgs = CancelEventArgs ()
         
-        // CancelEventArgs ()
-        // |> raiseStartExecution
-        // |> raiseStartSetup writeResult
-        // |> raiseEndSetup result
-        // |> raiseTestStart result writeResult env
-        // |> raiseTestEnd result
-        // |> raiseStartTearDown writeResult
-        // |> raiseEndExecution result
-        // |> ignore
-        
-        result
+        {
+            SetupResult = None
+            TestResult = None
+            TeardownResult = None 
+        }
+        |> startExecution cancelEventArgs
+        |> startSetup cancelEventArgs
+        |> endSetup cancelEventArgs
+        |> startTest cancelEventArgs env
+        |> endTest
+        |> startTearDown cancelEventArgs
+        |> endExecution cancelEventArgs
         
     override this.ToString () =
         $"%s{this.Parent.ToString ()}.Executor"
@@ -94,20 +145,7 @@ type UnitTestExecutor (parent: ITest, setup: unit -> SetupResult, test: Framewor
         [<CLIEvent>]
         member this.TestLifecycleEvent = testLifecycleEvent.Publish
             
-type TestPart =
-    | EmptyPart
-    | SetupPart of (unit -> SetupResult)
-    | TeardownPart of (unit -> TeardownResult)
-    | Both of setup: (unit -> SetupResult) * tearDown: (unit -> TeardownResult)
-            
-type UnitTest (containerPath: string, containerName: string, testName: string, tags: TestTag seq, test: FrameworkEnvironment -> TestResult, testParts: TestPart, location: CodeLocation) =
-    let setup, tearDown =
-        match testParts with
-        | EmptyPart -> successfulSetup, successfulTeardown
-        | SetupPart setup -> setup, successfulTeardown
-        | TeardownPart tearDown -> successfulSetup, tearDown
-        | Both (setup, tearDown) -> setup, tearDown
-
+type UnitTest<'a> (containerPath: string, containerName: string, testName: string, tags: TestTag seq, test: 'a -> FrameworkEnvironment -> TestResult, setup: unit -> Result<'a, SetupTeardownFailure>, tearDown: Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>, location: CodeLocation) =
     override this.ToString () =
         let test = this :> ITest
         [
@@ -139,20 +177,34 @@ type UnitTest (containerPath: string, containerName: string, testName: string, t
             
 type TestBuilder (containerPath: string, containerName: string) =
     let mutable tests : ITest list = []
-    member _.Test(action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        let test = UnitTest (containerPath, containerName, testName, [], action, part, buildLocation fullPath lineNumber) :> ITest
-        tests <- test::tests
-        test
+    member _.Test<'a> (tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        match setup, tearDown, tags with
+        | Setup setup, Teardown teardown, TestTags testTags ->
+            let test = UnitTest (containerPath, containerName, testName, testTags, testAction, setup, teardown, buildLocation fullPath lineNumber) :> ITest
+            tests <- test::tests
+            test
+            
+    member this.Test<'a> (setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (TestTags [], setup, testAction, tearDown, testName, fullPath, lineNumber)
+        
+    member this.Test<'a> (tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (tags, setup, testAction, Teardown (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
+        
+    member this.Test<'a> (setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (setup, testAction, Teardown (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
+        
+    member this.Test (tags: TagPart, testAction: unit -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (tags, Setup (fun _ -> Ok ()), testAction, tearDown, testName, fullPath, lineNumber)
+        
+    member this.Test (testAction: unit -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (TestTags [], Setup (fun _ -> Ok ()), testAction, tearDown, testName, fullPath, lineNumber)
+        
+    member this.Test (tags: TagPart, testAction: unit -> FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (tags, Setup (fun _ -> Ok ()), testAction, Teardown (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
+        
+    member this.Test (testAction: FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.Test (TestTags [], Setup (fun _ -> Ok ()), (fun _ -> testAction), Teardown (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
     
-    member this.Test (action: FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.Test(action, EmptyPart, testName, fullPath, lineNumber)
-        
-    member this.Test( testName: string, action: FrameworkEnvironment -> TestResult, part: TestPart, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.Test (action, part, testName, fullPath, lineNumber)
-
-    member this.Test (testName: string, action: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.Test (action, testName, fullPath, lineNumber)
-        
     member _.Tests with get () = tests
 
     

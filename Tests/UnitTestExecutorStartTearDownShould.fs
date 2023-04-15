@@ -8,18 +8,20 @@ let private container = suite.Container ()
 
 let ``be raised when the test is executed`` =
     container.Test (fun _ ->
-        let executor = buildDummyExecutor None None
+        let container = suite.Container ("badd", "testcontainer")
+        let test = container.Test (fun _ -> TestSuccess)
+        let executor = test.GetExecutor ()
         
         let mutable result = expects.GeneralNotRunFailure () |> TestFailure
         
         executor.TestLifecycleEvent.Add (fun args ->
             match args with
-            | TestStartTearDown -> result <- TestSuccess
+            | TestStartTeardown -> result <- TestSuccess
             | _ -> ()
         )
         
         executor
-        |> getNoFrameworkInfoFromExecution
+        |> getEmptyEnvironment
         |> executor.Execute
         |> ignore
         

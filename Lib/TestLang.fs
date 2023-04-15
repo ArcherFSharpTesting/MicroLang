@@ -15,20 +15,11 @@ let ignoreString _ = $"%d{randomInt ()}%d{randomInt ()}%d{randomInt ()}"
 let ignorePath _ = $"%s{ignoreString ()}.test"
 
 let successfulTest _ = TestSuccess
-        
-let buildDummyTest (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
-    let c = suite.Container ()
-        
-    match parts, testAction with
-    | None, None -> c.Test (successfulTest, EmptyPart, ignoreString (), ignoreString (), ignoreInt ())
-    | None, Some action -> c.Test (action, EmptyPart, ignoreString (), ignoreString (), ignoreInt ())
-    | Some part, None -> c.Test (successfulTest, part, ignoreString (), ignoreString (), ignoreInt ())
-    | Some part, Some action -> c.Test (action, part, ignoreString (), ignoreString (), ignoreInt ())
-    
-let buildDummyExecutor (testAction: (FrameworkEnvironment -> TestResult) option) (parts: TestPart option) =
-    let test = buildDummyTest testAction parts
-    
-    test.GetExecutor ()
+
+let successfulUnitSetup _ = Ok ()
+let successfulEnvironmentTest _ _ = TestSuccess
+
+let successfulTeardown _ _ = Ok ()
 
 let reportFailures (failures: TestFailContainer list) =
     let rec reportFailures (failures: TestFailContainer list) depth =
@@ -39,37 +30,46 @@ let reportFailures (failures: TestFailContainer list) =
             }
             |> fun items -> System.String.Join ("", items)
             
-        let deconstruct (test: ITest) failure =
+        let deconstruct (test: ITest) (failure: TestFailureType) =
             match failure with
-            | CancelFailure -> test.Location, $"%A{CancelFailure}"
-            | TestExecutionFailure testExecutionFailure ->
-                let rec deconstructExecution executionFailure =
-                    match executionFailure with
-                    | VerificationFailure (verificationInfo, codeLocation) ->
-                        codeLocation, $"%A{verificationInfo}"
-                    | FailureWithMessage (message, testExecutionFailure) ->
-                        let location, m = deconstructExecution testExecutionFailure
-                        location, $"%s{m} \"%s{message}\""
-                    | TestExceptionFailure e -> test.Location, $"Test Threw exception: %A{e}"
-                    | CombinationFailure (a, b) ->
-                        test.Location, $"%A{(a, b)}"
-                    | OtherFailure (message, codeLocation) ->
-                        codeLocation, $"Other Failure %A{message}"
-                        
-                deconstructExecution testExecutionFailure
-            | ExceptionFailure ex -> test.Location, $"%A{ex}"
-            | SetupFailure setupTearDownFailure ->
-                match setupTearDownFailure with
-                | SetupTearDownExceptionFailure ex ->
-                    test.Location, $"Setup Threw Exception: %A{ex}"
-                | GeneralSetupTearDownFailure (message, codeLocation) ->
-                    codeLocation, $"Setup failed: %s{message}"
-            | TearDownFailure setupTearDownFailure ->
-                match setupTearDownFailure with
-                | SetupTearDownExceptionFailure ex ->
-                    test.Location, $"Tear Down Threw Exception: %A{ex}"
-                | GeneralSetupTearDownFailure (message, codeLocation) ->
-                    codeLocation, $"Tear Down failed: %s{message}"
+            | GeneralFailureType generalTestingFailure ->
+                match generalTestingFailure with
+                | GeneralFailure message ->
+                    test.Location, $"GeneralFailure (%s{message})"
+                | GeneralCancelFailure ->
+                    test.Location, $"GeneralCancelFailure"
+                | GeneralExceptionFailure ex ->
+                    test.Location, $"%A{ex}"
+            | SetupFailureType setupFailure ->
+                match setupFailure with
+                | GeneralSetupTeardownFailure (message, codeLocation) ->
+                    codeLocation, $"GeneralSetupFailure (%s{message})"
+                | SetupTeardownCanceledFailure ->
+                    test.Location, "SetupCancelFailure"
+                | SetupTeardownExceptionFailure ex ->
+                    test.Location, $"%A{ex}"
+            | TeardownFailureType teardownFailure ->
+                match teardownFailure with
+                | GeneralSetupTeardownFailure (message, codeLocation) ->
+                    codeLocation, $"GeneralTeardownFailure (%s{message})"
+                | SetupTeardownCanceledFailure ->
+                    test.Location, "TearDownCanceledFailure"
+                | SetupTeardownExceptionFailure ex ->
+                    test.Location, $"%A{ex}"
+            | TestRunFailureType testFailure ->
+                match testFailure with
+                | CombinationFailure (a, b) ->
+                    test.Location, $"%A{(a, b)}"
+                | OtherFailure (message, codeLocation) ->
+                    codeLocation, $"OtherFailure (%s{message})"
+                | VerificationFailure (verificationInfo, codeLocation) ->
+                    codeLocation, $"VerificationFailure (%A{verificationInfo})"
+                | FailureWithMessage (message, testFailure) ->
+                    test.Location, $"%A{testFailure}  : (%s{message})"
+                | TestCanceledFailure ->
+                    test.Location, "TestCanceledFailure"
+                | TestExceptionFailure ex ->
+                    test.Location, $"%A{ex}"
             
         failures
         |> List.iter (fun failure ->

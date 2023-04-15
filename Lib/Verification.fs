@@ -25,7 +25,6 @@ type Expect () =
             buildLocation fullPath lineNumber
         )
         |> OtherFailure
-        |> TestExecutionFailure
         
     member this.AsValidationFailure (expected, actual, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.AsValidationFailure (
@@ -41,21 +40,30 @@ type Expect () =
             buildLocation fullPath lineNumber
         )
         |> VerificationFailure
-        |> TestExecutionFailure
         
     member this.AsSetupFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.AsGeneralSetupTeardownFailure (message, fullPath, lineNumber)
+        |> SetupFailure
+        
+    member this.AsGeneralSetupTeardownFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         (
             message,
             buildLocation fullPath lineNumber
         )
-        |> GeneralSetupTearDownFailure
-        |> SetupFailure
+        |> GeneralSetupTeardownFailure
         
     member this.GeneralNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.AsGeneralFailure ("Not Run", fullPath, lineNumber)
         
     member this.NotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.AsValidationFailure ({ Expected = "Not to have been run"; Actual = "Was run" }, fullPath, lineNumber)
+        
+    member _.AsOtherTestExecutionFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        (
+            message,
+            buildLocation fullPath lineNumber
+        )
+        |> OtherFailure
         
     member _.ToBeIgnored (message: string option, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         (
@@ -72,23 +80,20 @@ let expects = Expect ()
 
 let combineResultIgnoring defaultError a b =
     match a, b with
+    | TestFailure TestCanceledFailure as failure, _
+    | _, (TestFailure TestCanceledFailure as failure) -> failure
+
+    | TestIgnored _ as ing, _ -> ing
+
     | var, _ when var = defaultError -> b
     | _, var when var = defaultError -> a
+
     | TestSuccess, _ -> b
     | _, TestSuccess -> a
-    | TestFailure (TestExecutionFailure tfa), TestFailure (TestExecutionFailure tfb) -> CombinationFailure (tfa, tfb) |> TestExecutionFailure |> TestFailure
-    | TestFailure (TestExecutionFailure _) as failure, _
-    | _, (TestFailure (TestExecutionFailure _) as failure) -> failure
-    | TestFailure CancelFailure as failure, _
-    | _, (TestFailure CancelFailure as failure) -> failure
-    | TestFailure (ExceptionFailure _) as failure, _
-    | _, (TestFailure (ExceptionFailure _) as failure) -> failure
-    | TestFailure (SetupFailure _) as failure, _
-    | _, (TestFailure (SetupFailure _) as failure) -> failure
-    | TestFailure (TearDownFailure _) as failure, _
-    | _, (TestFailure (TearDownFailure _) as failure) -> failure
-    | TestIgnored _ as ing, _
-    | _, (TestIgnored _ as ing) -> ing
+    
+    | TestFailure tfa, TestFailure tfb -> CombinationFailure (tfa, tfb) |> TestFailure
+    | TestFailure _ as failure, _
+    | _, (TestFailure _ as failure) -> failure
     
 let andResult = combineResultIgnoring TestSuccess
 
@@ -102,7 +107,7 @@ let combineError = combineResultIgnoring TestSuccess
         
 let withMessage message result =
     match result with
-    | TestFailure (TestExecutionFailure f) -> FailureWithMessage (message, f) |> TestExecutionFailure |> TestFailure
+    | TestFailure f -> FailureWithMessage (message, f) |> TestFailure
     | TestSuccess
     | TestIgnored _
     | TestFailure _ -> result

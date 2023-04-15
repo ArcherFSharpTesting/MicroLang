@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="PublicTypes.fs" />
     <Compile Include="TestLang.Types.fs" />
     <Compile Include="TestLang.fs" />
     <Compile Include="Verification.fs" />
@@ -23,6 +24,7 @@
   <ItemGroup>
     <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.22" />
     <PackageReference Include="whats-your-version" Version="2.1.0" />
+    <PackageReference Update="FSharp.Core" Version="7.0.300-beta.23176.1" />
   </ItemGroup>
 
 </Project>

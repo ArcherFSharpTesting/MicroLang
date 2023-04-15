@@ -11,24 +11,31 @@ let private container = suite.Container ()
 
 let ``Should have the creating test as its parent`` =
     container.Test(fun _ ->
-        let executor = buildDummyExecutor None None
+        let container = suite.Container (ignoreString (), ignoreString ())
+        let test = container.Test successfulTest
+        let executor = test.GetExecutor ()
         
         executor.Parent
-        |> expects.ToBe executor.Parent
+        |> expects.ToBe test
     )
     
 let ``Should return success if test action returns success`` =
     container.Test (fun _ ->
-        let test = buildDummyExecutor None None
+        let container = suite.Container ("Fake", "Container")
+        let test = container.Test successfulTest
+        let executor = test.GetExecutor ()
         
-        test
-        |> getNoFrameworkInfoFromExecution
-        |> test.Execute 
+        executor
+        |> getEmptyEnvironment
+        |> executor.Execute
+        |> expects.ToBe (TestSuccess |> TestExecutionResult)
     )
     
 let ``Should raise all events in correct order`` =
     container.Test(fun _ ->
-        let executor = buildDummyExecutor None None
+        let container = suite.Container ("fake", "container")
+        let test = container.Test successfulTest
+        let executor = test.GetExecutor ()
         
         let mutable cnt = 0
         let notRun = expects.GeneralNotRunFailure () |> TestFailure
@@ -80,7 +87,7 @@ let ``Should raise all events in correct order`` =
                     
                 cnt <- cnt + 1
                 result <- r |> combineResult result
-            | TestStartTearDown ->
+            | TestStartTeardown ->
                 let r =
                     cnt
                     |> expects.ToBe 5
@@ -99,7 +106,7 @@ let ``Should raise all events in correct order`` =
         )
         
         executor
-        |> getNoFrameworkInfoFromExecution
+        |> getEmptyEnvironment
         |> executor.Execute
         |> ignore
         
