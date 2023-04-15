@@ -17,6 +17,7 @@
     <Compile Include="PublicTypes.fs" />
     <Compile Include="TestLang.Types.fs" />
     <Compile Include="TestLang.fs" />
+    <Compile Include="VerificationTypes.fs" />
     <Compile Include="Verification.fs" />
     <Content Include="Directory.Build.props" />
   </ItemGroup>

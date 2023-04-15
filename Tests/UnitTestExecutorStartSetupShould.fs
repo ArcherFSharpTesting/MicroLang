@@ -3,7 +3,6 @@ module Archer.MicroLang.Tests.``UnitTestExecutor StartSetup should``
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
 open Archer
-open Archer.MicroLang.Types
 open Microsoft.FSharp.Control
 
 let private container = suite.Container ()
@@ -17,7 +16,7 @@ let ``prevent the call of the test setup if canceled`` =
             
             let setupAction =
                 (fun _ ->
-                    result <- expects.NotRunValidationFailure () |> TestFailure
+                    result <- newFailure.With.NotRunValidationFailure () |> TestFailure
                     Ok ()
                 )
                 
@@ -47,7 +46,7 @@ let ``prevent the call of the test action if canceled`` =
             let mutable result = TestSuccess
             
             let testAction _ =
-                result <- expects.NotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.NotRunValidationFailure () |> TestFailure
                 TestSuccess
                 
             let executor = testBuilder testAction
@@ -76,10 +75,10 @@ let ``prevent the call of the test action if failed`` =
             let mutable result = TestSuccess
             
             let testAction _ =
-                result <- expects.NotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.NotRunValidationFailure () |> TestFailure
                 
                 "Should not have been here"
-                |> expects.AsOtherTestExecutionFailure
+                |> newFailure.With.OtherTestExecutionFailure
                 |> TestFailure
                 
             let executor = testBuilder testAction

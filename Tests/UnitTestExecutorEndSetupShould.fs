@@ -2,7 +2,6 @@ module Archer.MicroLang.Tests.``UnitTestExecutor EndSetup should``
 
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
-open Archer.MicroLang.Types
 open Archer
 open Microsoft.FSharp.Control
 
@@ -12,11 +11,11 @@ let ``carry the result of the StartSetup event`` =
     container.Test (
         Setup setupExecutorFromSetupResult,
         fun testBuilder _ ->
-            let expectedFailure = "Failures abound" |> expects.AsGeneralSetupTeardownFailure
+            let expectedFailure = "Failures abound" |> newFailure.With.GeneralSetupTeardownFailure
             
             let executor = testBuilder (expectedFailure |> Error)
             
-            let mutable result = expects.GeneralNotRunFailure () |> TestFailure
+            let mutable result = newFailure.With.GeneralNotRunFailure () |> TestFailure
             
             executor.TestLifecycleEvent
             |> Event.add (fun args ->
@@ -44,7 +43,7 @@ let ``prevent the call of the test action if canceled`` =
             let mutable result = TestSuccess
             
             let testAction _ =
-                result <- expects.NotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.NotRunValidationFailure () |> TestFailure
                 TestSuccess
                 
             let executor = testBuilder testAction
@@ -89,10 +88,10 @@ let ``should carry result of setup action fails`` =
         Setup setupExecutorFromSetupResult,
         
         fun testBuilder _ ->
-            let expectedFailure = "This is an intended failure" |> expects.AsGeneralSetupTeardownFailure
+            let expectedFailure = "This is an intended failure" |> newFailure.With.GeneralSetupTeardownFailure
             let setupResult = expectedFailure  |> Error
             
-            let mutable result = expects.GeneralNotRunFailure () |> TestFailure
+            let mutable result = newFailure.With.GeneralNotRunFailure () |> TestFailure
             
             let executor = testBuilder setupResult
             

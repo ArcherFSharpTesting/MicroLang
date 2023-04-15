@@ -1,9 +1,7 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor happy path``
 
-open System
 open Archer
 open Archer.CoreTypes.InternalTypes
-open Archer.CoreTypes.InternalTypes.FrameworkTypes
 open Archer.MicroLang
 open Microsoft.FSharp.Control
 
@@ -42,7 +40,7 @@ let ``Should raise all events in correct order`` =
         
         fun executor _ ->
             let mutable cnt = 0
-            let notRun = expects.GeneralNotRunFailure () |> TestFailure
+            let notRun = newFailure.With.GeneralNotRunFailure () |> TestFailure
             let mutable result = notRun
             
             let combineResult = combineResultIgnoring notRun

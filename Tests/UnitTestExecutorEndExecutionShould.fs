@@ -3,7 +3,6 @@ module Archer.MicroLang.Tests.``UnitTestExecutor EndExecution should``
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
-open Archer.MicroLang.Types
 
 let private container = suite.Container ()
 
@@ -12,7 +11,7 @@ let ``be raised when the test is executed`` =
         Setup setupExecutor,
         
         fun executor _ ->
-            let mutable result = expects.GeneralNotRunFailure () |> TestFailure
+            let mutable result = newFailure.With.GeneralNotRunFailure () |> TestFailure
             
             executor.TestLifecycleEvent
             |> Event.add (fun args ->

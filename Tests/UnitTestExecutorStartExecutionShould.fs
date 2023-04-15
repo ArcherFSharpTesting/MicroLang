@@ -1,6 +1,5 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor StartExecution should``
 
-open Archer.MicroLang.Types
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang
@@ -16,7 +15,7 @@ let ``prevent the call of the test setup if canceled`` =
             
             let setupAction =
                 (fun _ ->
-                    result <- expects.NotRunValidationFailure () |> TestFailure
+                    result <- newFailure.With.NotRunValidationFailure () |> TestFailure
                     Ok ()
                 )
                 
@@ -46,7 +45,7 @@ let ``prevent the call of the test action if canceled`` =
             let mutable result = TestSuccess
             
             let testAction _ =
-                result <- expects.NotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.NotRunValidationFailure () |> TestFailure
                 TestSuccess
                 
             let executor = testBuilder testAction
