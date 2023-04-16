@@ -3,6 +3,6 @@ module Archer.MicroLang.PublicTypes
 
 open Archer
 
-type SetupPart<'a> = | Setup of setup: (unit -> Result<'a, SetupTeardownFailure>)
-type TeardownPart<'a> = | Teardown of teardown: (Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>)
-type TagPart = | TestTags of TestTag list
+type SetupPart<'a> = | SetupPart of setup: (unit -> Result<'a, SetupTeardownFailure>)
+type TeardownPart<'a> = | TeardownPart of teardown: (Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>)
+type TagPart = | TestTagsPart of TestTag list

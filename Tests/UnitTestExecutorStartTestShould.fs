@@ -8,7 +8,7 @@ let private container = suite.Container ()
 
 let ``be raised when the test is executed`` =
     container.Test (
-        Setup setupExecutor,
+        SetupPart setupExecutor,
         
         fun executor _ ->
             let mutable result = newFailure.With.GeneralNotRunFailure () |> TestFailure

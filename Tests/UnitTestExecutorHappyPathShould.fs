@@ -9,7 +9,7 @@ let private container = suite.Container ()
 
 let ``Should have the creating test as its parent`` =
     container.Test(
-        Setup (fun _ ->
+        SetupPart (fun _ ->
             let container = suite.Container (ignoreString (), ignoreString ())
             let test = container.Test successfulTest
             
@@ -25,7 +25,7 @@ let ``Should have the creating test as its parent`` =
     
 let ``Should return success if test action returns success`` =
     container.Test (
-        Setup setupExecutor,
+        SetupPart setupExecutor,
         
         fun executor _ ->
             executor
@@ -36,7 +36,7 @@ let ``Should return success if test action returns success`` =
     
 let ``Should raise all events in correct order`` =
     container.Test(
-        Setup setupExecutor,
+        SetupPart setupExecutor,
         
         fun executor _ ->
             let mutable cnt = 0

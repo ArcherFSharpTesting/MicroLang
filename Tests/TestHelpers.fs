@@ -46,7 +46,7 @@ let setupExecutorFromTestAction _ =
 let setupExecutorFromSetupResult _ =
     let testFromSetupAction setupResult =
         let container = getContainerUnderTest ()
-        let test = container.Test (ignoreString (), Setup (fun _ -> setupResult), successfulEnvironmentTest)
+        let test = container.Test (ignoreString (), SetupPart (fun _ -> setupResult), successfulEnvironmentTest)
         test.GetExecutor ()
         
     testFromSetupAction |> Ok
@@ -54,7 +54,7 @@ let setupExecutorFromSetupResult _ =
 let setupExecutorFromSetupAction _ =
     let setupTest setupAction =
         let container = getContainerUnderTest ()
-        let test = container.Test (ignoreString (), Setup setupAction, successfulEnvironmentTest)
+        let test = container.Test (ignoreString (), SetupPart setupAction, successfulEnvironmentTest)
         test.GetExecutor ()
     
     setupTest |> Ok
@@ -62,7 +62,7 @@ let setupExecutorFromSetupAction _ =
 let setupExecutorFromTestActionAndSetupResult _ =
     let testBuilder setupResult testAction =
         let container = getContainerUnderTest ()
-        let test = container.Test (ignoreString (), Setup (fun _ -> setupResult), testAction)
+        let test = container.Test (ignoreString (), SetupPart (fun _ -> setupResult), testAction)
         test.GetExecutor ()
     
     testBuilder |> Ok

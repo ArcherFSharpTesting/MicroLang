@@ -8,7 +8,7 @@ let private container = suite.Container ()
 
 let ``prevent the call of the test setup if canceled`` =
     container.Test (
-        Setup setupExecutorFromSetupAction,
+        SetupPart setupExecutorFromSetupAction,
         
         fun testBuilder _ ->
             let mutable result = TestSuccess
@@ -39,7 +39,7 @@ let ``prevent the call of the test setup if canceled`` =
     
 let ``prevent the call of the test action if canceled`` =
     container.Test (
-        Setup setupExecutorFromTestAction,
+        SetupPart setupExecutorFromTestAction,
         
         fun testBuilder _ ->
             let mutable result = TestSuccess
@@ -68,7 +68,7 @@ let ``prevent the call of the test action if canceled`` =
     
 let ``should cause execution to return a CancelError if canceled`` =
     container.Test (
-        Setup setupExecutor,
+        SetupPart setupExecutor,
         
         fun executor _ ->
             executor.TestLifecycleEvent
