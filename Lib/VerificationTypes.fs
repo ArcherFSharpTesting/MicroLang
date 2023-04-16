@@ -44,7 +44,7 @@ type FailureWithBuilder () =
         
 type FailureAsBuilder () =
     let withBuilder = FailureWithBuilder () 
-    member this.AsSetupFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.GeneralSetupFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         withBuilder.GeneralSetupTeardownFailure (message, fullPath, lineNumber)
         |> SetupFailure
         
@@ -53,7 +53,7 @@ type FailureBuilder () =
     let asBuilder = FailureAsBuilder ()
     
     member _.With with get () = withBuilder
-    member _.As with get () = asBuilder
+    member _.AsResultOf with get () = asBuilder
         
     [<Obsolete "Use 'With.OtherTestExecutionFailure'">]
     member this.AsGeneralFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
@@ -78,7 +78,7 @@ type FailureBuilder () =
         
     [<Obsolete "Use 'As.SetupFailure'">]
     member this.AsSetupFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.As.AsSetupFailure (message, fullPath, lineNumber)
+        this.AsResultOf.GeneralSetupFailure (message, fullPath, lineNumber)
         
     [<Obsolete "Use 'With.GeneralSetupTeardownFailure'">]
     member this.AsGeneralSetupTeardownFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
@@ -103,6 +103,11 @@ type FailureBuilder () =
             buildLocation fullPath lineNumber
         )
         |> OtherFailure
+        
+type ValueComparisonResult<'a> = {
+    ExpectedValue: 'a
+    Delta: 'a
+}
 
 type Expect () =
     let failureBuilder = FailureBuilder ()
@@ -118,12 +123,20 @@ type Expect () =
     member this.ToBeTrue (actual: bool, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.ToBe (true, fullPath, lineNumber) actual
         
+    member this.ToBeFalse (actual: bool, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.ToBe (false, fullPath, lineNumber) actual
+            
+        
     member _.ToBeIgnored (message: string option, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        (
-            message,
-            buildLocation fullPath lineNumber
-        )
-        |> TestIgnored
+        let ignoreIt ignoreValue =
+            ignoreValue |> ignore
+            (
+                message,
+                buildLocation fullPath lineNumber
+            )
+            |> TestIgnored
+            
+        ignoreIt
         
     member this.ToBeIgnored (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.ToBeIgnored (Some message, fullPath, lineNumber)
