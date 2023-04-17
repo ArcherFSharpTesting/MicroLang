@@ -11,7 +11,7 @@ let ``be raised when the test is executed`` =
         SetupPart setupExecutor,
         
         fun executor _ ->
-            let mutable result = newFailure.With.GeneralNotRunFailure () |> TestFailure
+            let mutable result = newFailure.With.TestExecutionNotRunFailure () |> TestFailure
             
             executor.TestLifecycleEvent.Add (fun args ->
                 match args with

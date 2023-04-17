@@ -10,7 +10,7 @@ let ``Should return failure if the test action returns failure`` =
         SetupPart setupExecutorFromResult,
         
         fun testCreator _ ->
-            let expectedFailure = { Actual = "Things don't add up"; Expected = "nice and tidy" } |> newFailure.With.ValidationFailure |> TestFailure
+            let expectedFailure = { Actual = "Things don't add up"; Expected = "nice and tidy" } |> newFailure.With.TestExecutionValidationFailure |> TestFailure
             let expectedResult = expectedFailure |> TestExecutionResult
             
             let execution = testCreator expectedFailure 
@@ -29,7 +29,7 @@ let ``Should fail test if setup fails`` =
         SetupPart setupExecutorFromSetupResult,
         
         fun testBuilder _ ->
-            let failure = "Setup Fail" |> newFailure.With.GeneralSetupTeardownFailure
+            let failure = "Setup Fail" |> newFailure.With.SetupTeardownGeneralFailure
             
             let executor = testBuilder (Error failure)
             
@@ -46,10 +46,10 @@ let ``Should not call the test action if setup fails`` =
         fun testBuilder _ ->
             let mutable result = TestSuccess
             
-            let failure = "Setup Fail" |> newFailure.With.GeneralSetupTeardownFailure
+            let failure = "Setup Fail" |> newFailure.With.SetupTeardownGeneralFailure
             
             let testAction _ _ =
-                result <- newFailure.With.NotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.TestExecutionNotRunValidationFailure () |> TestFailure
                 result
             
             let executor = testBuilder (Error failure) testAction 
