@@ -15,13 +15,16 @@ type FailureWithBuilder () =
         )
         |> OtherFailure
         
-    member this.TestExecutionValidationFailure (expected, actual, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.TestExecutionValidationFailure (
-            {
-                Expected = expected
-                Actual = actual 
-            }, fullPath, lineNumber
-        )
+    member this.TestExecutionValidationFailure<'a> (expected: 'a, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let validation (actual: 'a) = 
+            this.TestExecutionValidationFailure (
+                {
+                    Expected = $"%A{expected}"
+                    Actual = $"%A{actual}" 
+                }, fullPath, lineNumber
+            )
+            
+        validation
         
     member _.TestExecutionValidationFailure (results, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         (
@@ -37,6 +40,10 @@ type FailureWithBuilder () =
         )
         |> GeneralSetupTeardownFailure
         
+    member _.TestExecutionCanceledFailure () = TestCanceledFailure
+    
+    member _.TestExecutionExceptionFailure ex = ex |> TestExceptionFailure
+        
     member _.SetupTeardownCanceledFailure () = SetupTeardownCanceledFailure
     
     member _.SetupTeardownExceptionFailure ex = ex |> SetupTeardownExceptionFailure
@@ -46,7 +53,6 @@ type FailureWithBuilder () =
         
     member this.TestExecutionNotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.TestExecutionValidationFailure ({ Expected = "Not to have been run"; Actual = "Was run" }, fullPath, lineNumber)
- 
  
 type SetupTeardownFailureBuilder<'a> (failureType: SetupTeardownFailure -> 'a) =
     let withBuilder = FailureWithBuilder ()
@@ -63,13 +69,37 @@ type SetupTeardownFailureBuilder<'a> (failureType: SetupTeardownFailure -> 'a) =
         |> withBuilder.SetupTeardownExceptionFailure
         |> failureType
         
+type TestExecutionFailureBuilder () =
+    let failureWith = FailureWithBuilder ()
+    
+    member _.VerificationFailure<'a> (expected: 'a, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let validate (actual: 'a) =
+            failureWith.TestExecutionValidationFailure (expected, fullPath, lineNumber) actual
+            |> TestFailure
+            
+        validate
+        
+    member _.ValidationFailure (results, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        failureWith.TestExecutionValidationFailure (results, fullPath, lineNumber)
+        |> TestFailure
+        
+    member _.CanceledFailure = failureWith.TestExecutionCanceledFailure >> TestFailure
+    
+    member _.ExceptionFailure = failureWith.TestExecutionExceptionFailure >> TestFailure
+    
+    member _.OtherFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        failureWith.TestExecutionOtherFailure (message, fullPath, lineNumber)
+        |> TestFailure
+    
 type FailureAsResultBuilder () =
-    let withBuilder = FailureWithBuilder ()
     let setupFailureBuilder = SetupTeardownFailureBuilder SetupFailure
     let tearDownFailureBuilder = SetupTeardownFailureBuilder TeardownFailure
     
+    let testExecutionFailureBuilder = TestExecutionFailureBuilder ()
+    
     member _.SetupResultOf with get () = setupFailureBuilder
     member _.TeardownResultOf with get () = tearDownFailureBuilder
+    member _.TestExecutionResultOf with get () = testExecutionFailureBuilder
         
 type FailureBuilder () =
     let withBuilder = FailureWithBuilder ()
