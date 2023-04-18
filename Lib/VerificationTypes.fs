@@ -131,6 +131,7 @@ type Expect () =
                 buildLocation fullPath lineNumber
             )
             |> TestIgnored
+            |> TestFailure
             
         ignoreIt
         
