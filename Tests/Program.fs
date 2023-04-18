@@ -19,6 +19,7 @@ let framework = bow.Framework ()
     ``UnitTestExecutor EndTest should``.``Test Cases``
     ``UnitTestExecutor StartTearDown should``.``Test Cases``
     ``UnitTestExecutor EndExecution should``.``Test Cases``
+    ``expects ToBeTypeOf``.``Test Cases``
 ]
 |> List.concat
 |> framework.AddTests

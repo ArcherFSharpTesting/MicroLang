@@ -19,6 +19,7 @@
     <Compile Include="UnitTestExecutorEndTestShould.fs" />
     <Compile Include="UnitTestExecutorStartTearDownShould.fs" />
     <Compile Include="UnitTestExecutorEndExecutionShould.fs" />
+    <Compile Include="expectsToBeShould.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

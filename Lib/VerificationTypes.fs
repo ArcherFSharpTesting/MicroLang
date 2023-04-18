@@ -148,3 +148,11 @@ type Expect () =
         
     member this.ToBeIgnored (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.ToBeIgnored (Some message, fullPath, lineNumber)
+        
+    member _.ToBeOfType<'T> (value, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let tType = typeof<'T>
+        
+        if tType.IsInstanceOfType value then
+            TestSuccess
+        else
+            failureBuilder.With.TestValidationFailure ({ Expected = $"%A{tType}"; Actual = $"%A{value.GetType ()}" }, fullPath, lineNumber) |> TestFailure
