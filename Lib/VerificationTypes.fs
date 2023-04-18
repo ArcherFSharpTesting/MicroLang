@@ -144,6 +144,7 @@ type Expect () =
         
     member _.NotToBeCalled ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         failureBuilder.With.TestOtherExpectationFailure ("Expected to throw exception but did not", fullPath, lineNumber)
+        |> TestFailure
         
     member this.ToBeIgnored (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.ToBeIgnored (Some message, fullPath, lineNumber)
