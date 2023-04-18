@@ -78,7 +78,7 @@ let ``prevent the call of the test action if failed`` =
                 result <- newFailure.With.TestExecutionNotRunValidationFailure () |> TestFailure
                 
                 "Should not have been here"
-                |> newFailure.With.TestExecutionOtherFailure
+                |> newFailure.With.TestOtherExpectationFailure
                 |> TestFailure
                 
             let executor = testBuilder testAction

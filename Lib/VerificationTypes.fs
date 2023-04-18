@@ -1,6 +1,5 @@
 ﻿module Archer.MicroLang.VerificationTypes
 
-open System
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Archer.MicroLang.Types.TypeSupport
@@ -8,31 +7,6 @@ open Archer
 
 
 type FailureWithBuilder () =
-    member _.TestExecutionOtherFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        (
-            message,
-            buildLocation fullPath lineNumber
-        )
-        |> OtherFailure
-        
-    member this.TestExecutionValidationFailure<'a> (expected: 'a, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        let validation (actual: 'a) = 
-            this.TestExecutionValidationFailure (
-                {
-                    Expected = $"%A{expected}"
-                    Actual = $"%A{actual}" 
-                }, fullPath, lineNumber
-            )
-            
-        validation
-        
-    member _.TestExecutionValidationFailure (results, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        (
-            results,
-            buildLocation fullPath lineNumber
-        )
-        |> VerificationFailure
-        
     member _.SetupTeardownGeneralFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         (
             message,
@@ -40,65 +14,83 @@ type FailureWithBuilder () =
         )
         |> GeneralSetupTeardownFailure
         
-    member _.TestExecutionCanceledFailure () = TestCanceledFailure
-    
     member _.TestExecutionExceptionFailure ex = ex |> TestExceptionFailure
         
     member _.SetupTeardownCanceledFailure () = SetupTeardownCanceledFailure
     
     member _.SetupTeardownExceptionFailure ex = ex |> SetupTeardownExceptionFailure
+    
+    member _.TestValidationFailure<'a> (expected: 'a, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let validate (actual: 'a) =
+            (
+                {
+                    Expected = $"%A{expected}"
+                    Actual = $"%A{actual}" 
+                } |> ExpectationVerificationFailure,
+                buildLocation fullPath lineNumber
+            )
+            |> TestExpectationFailure
+            
+        validate
+        
+    member _.TestValidationFailure (results, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        (
+            results |> ExpectationVerificationFailure,
+            buildLocation fullPath lineNumber
+        )
+        |> TestExpectationFailure
+        
+    member _.TestOtherExpectationFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        (
+            message |> ExpectationOtherFailure,
+            buildLocation fullPath lineNumber
+        )
+        |> TestExpectationFailure
         
     member this.TestExecutionNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.TestExecutionOtherFailure ("Not Run", fullPath, lineNumber)
+        this.TestOtherExpectationFailure ("Should not run", fullPath, lineNumber)
         
     member this.TestExecutionNotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.TestExecutionValidationFailure ({ Expected = "Not to have been run"; Actual = "Was run" }, fullPath, lineNumber)
+        this.TestValidationFailure ("Not To Run", fullPath, lineNumber) "Was run"
  
-type SetupTeardownFailureBuilder<'a> (failureType: SetupTeardownFailure -> 'a) =
+type SetupTeardownFailureBuilder<'a> (resultType: SetupTeardownFailure -> 'a) =
     let withBuilder = FailureWithBuilder ()
     member _.GeneralFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         withBuilder.SetupTeardownGeneralFailure (message, fullPath, lineNumber)
-        |> failureType
+        |> resultType
         
     member _.CanceledFailure () =
         withBuilder.SetupTeardownCanceledFailure ()
-        |> failureType
+        |> resultType
     
     member _.ExceptionFailure ex =
         ex
         |> withBuilder.SetupTeardownExceptionFailure
-        |> failureType
+        |> resultType
         
-type TestExecutionFailureBuilder () =
+        
+type TestExecutionFailureResultBuilder () =
     let failureWith = FailureWithBuilder ()
     
     member _.VerificationFailure<'a> (expected: 'a, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        let validate (actual: 'a) =
-            failureWith.TestExecutionValidationFailure (expected, fullPath, lineNumber) actual
-            |> TestFailure
-            
-        validate
+        failureWith.TestValidationFailure (expected, fullPath, lineNumber) >> TestFailure
         
-    member _.ValidationFailure (results, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        failureWith.TestExecutionValidationFailure (results, fullPath, lineNumber)
-        |> TestFailure
-        
-    member _.CanceledFailure = failureWith.TestExecutionCanceledFailure >> TestFailure
+    member _.ValidationFailure (result, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        failureWith.TestValidationFailure (result, fullPath, lineNumber) |> TestFailure
     
-    member _.ExceptionFailure = failureWith.TestExecutionExceptionFailure >> TestFailure
+    member _.TestExceptionFailure = failureWith.TestExecutionExceptionFailure >> TestFailure
     
-    member _.OtherFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        failureWith.TestExecutionOtherFailure (message, fullPath, lineNumber)
-        |> TestFailure
+    member _.OtherExpectationFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        failureWith.TestOtherExpectationFailure (message, fullPath, lineNumber) |> TestFailure
     
 type FailureAsResultBuilder () =
-    let setupFailureBuilder = SetupTeardownFailureBuilder SetupFailure
-    let tearDownFailureBuilder = SetupTeardownFailureBuilder TeardownFailure
+    let setupFailureResultBuilder = SetupTeardownFailureBuilder SetupFailure
+    let tearDownFailureResultBuilder = SetupTeardownFailureBuilder TeardownFailure
     
-    let testExecutionFailureBuilder = TestExecutionFailureBuilder ()
+    let testExecutionFailureBuilder = TestExecutionFailureResultBuilder ()
     
-    member _.SetupResultOf with get () = setupFailureBuilder
-    member _.TeardownResultOf with get () = tearDownFailureBuilder
+    member _.SetupResultOf with get () = setupFailureResultBuilder
+    member _.TeardownResultOf with get () = tearDownFailureResultBuilder
     member _.TestExecutionResultOf with get () = testExecutionFailureBuilder
         
 type FailureBuilder () =
@@ -107,55 +99,6 @@ type FailureBuilder () =
     
     member _.With with get () = withBuilder
     member _.As with get () = asBuilder
-        
-    [<Obsolete "Use 'With.OtherTestExecutionFailure'">]
-    member this.AsGeneralFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.With.TestExecutionOtherFailure (message, fullPath, lineNumber)
-        
-    [<Obsolete "Use 'With.ValidationFailure'">]
-    member this.AsValidationFailure (expected, actual, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.With.TestExecutionValidationFailure (
-            {
-                Expected = expected
-                Actual = actual 
-            }, fullPath, lineNumber
-        )
-        
-    [<Obsolete "Use 'With.ValidationFailure'">]
-    member this.AsValidationFailure (results, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        (
-            results,
-            buildLocation fullPath lineNumber
-        )
-        |> VerificationFailure
-        
-    [<Obsolete "Use 'As.SetupFailure'">]
-    member this.AsSetupFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.As.SetupResultOf.GeneralFailure (message, fullPath, lineNumber)
-        
-    [<Obsolete "Use 'With.GeneralSetupTeardownFailure'">]
-    member this.AsGeneralSetupTeardownFailure (message, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        (
-            message,
-            buildLocation fullPath lineNumber
-        )
-        |> GeneralSetupTeardownFailure
-        
-    [<Obsolete ("Use 'With.GeneralNotRunFailure'")>]
-    member this.GeneralNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.With.TestExecutionNotRunFailure (fullPath, lineNumber);
-        
-    [<Obsolete "Use 'With.NotRunValidationFailure'">]
-    member this.NotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        this.With.TestExecutionNotRunValidationFailure (fullPath, lineNumber)
-        
-    [<Obsolete "Use 'With.OtherTestExecutionFailure'">]
-    member _.AsOtherTestExecutionFailure (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        (
-            message,
-            buildLocation fullPath lineNumber
-        )
-        |> OtherFailure
         
 type ValueComparisonResult<'a> = {
     ExpectedValue: 'a
@@ -168,7 +111,7 @@ type Expect () =
         let check actual =
             if actual = expected then TestSuccess
             else
-                failureBuilder.With.TestExecutionValidationFailure ({ Expected = $"%A{expected}"; Actual = $"%A{actual}" }, fullPath, lineNumber)
+                failureBuilder.With.TestValidationFailure ({ Expected = $"%A{expected}"; Actual = $"%A{actual}" }, fullPath, lineNumber)
                 |> TestFailure
                 
         check
@@ -190,6 +133,16 @@ type Expect () =
             |> TestIgnored
             
         ignoreIt
+        
+    member this.ToThrow (f, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        try
+            f () |> ignore
+            this.NotToBeCalled (fullPath, lineNumber) |> Error
+        with
+        | ex -> Ok ex
+        
+    member _.NotToBeCalled ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        failureBuilder.With.TestOtherExpectationFailure ("Expected to throw exception but did not", fullPath, lineNumber)
         
     member this.ToBeIgnored (message: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.ToBeIgnored (Some message, fullPath, lineNumber)
