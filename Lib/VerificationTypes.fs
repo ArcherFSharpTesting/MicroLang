@@ -105,6 +105,26 @@ type ValueComparisonResult<'a> = {
     Delta: 'a
 }
 
+type IEventChecker =
+    abstract member IsValid: bool with get
+    abstract member FullPath: string with get
+    abstract member LineNumber: int with get
+    abstract member FailureDescription: string with get
+    abstract member SuccessDescription: string with get
+
+type private EventChecker (f, successDescription, failureDescription, fullPath, lineNumber) =
+    let mutable isValid = false
+    
+    member _.Run () =
+        isValid <- f ()
+        
+    interface IEventChecker with
+        member _.IsValid with get () = isValid
+        member _.SuccessDescription with get () = successDescription
+        member _.FailureDescription with get () = failureDescription
+        member _.FullPath with get () = fullPath
+        member _.LineNumber with get () = lineNumber
+
 type Expect () =
     let failureBuilder = FailureBuilder ()
     member this.ToBe (expected, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
@@ -156,3 +176,33 @@ type Expect () =
             TestSuccess
         else
             failureBuilder.With.TestValidationFailure ({ Expected = $"%A{tType}"; Actual = $"%A{value.GetType ()}" }, fullPath, lineNumber) |> TestFailure
+            
+    member _.ToBeTriggered (event, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let check = EventChecker ((fun () -> true), "Event to be triggered", "Event was not triggered", fullPath, lineNumber)
+        event
+        |> Event.add (fun _ -> check.Run ())
+        
+        check :> IEventChecker
+        
+    member this.ToBeTriggeredAndIdentifiedBy (filter, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let eventCheck event =
+            event
+            |> Event.filter filter
+            |> this.ToBeTriggered
+            
+        eventCheck
+        
+    member _.ToNotBeTriggered (event, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let check = EventChecker ((fun () -> false), "Event to not be triggered", "Event was triggered", fullPath, lineNumber)
+        event
+        |> Event.add (fun _ -> check.Run ())
+        
+        check :> IEventChecker
+        
+    member this.ToNotBeTriggeredAndIdentifiedBy (filter, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        let eventCheck event =
+            event
+            |> Event.filter filter
+            |> this.ToNotBeTriggered
+            
+        eventCheck

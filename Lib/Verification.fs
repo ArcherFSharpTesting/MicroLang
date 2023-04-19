@@ -37,3 +37,13 @@ let withMessage message result =
     | TestFailure (TestExpectationFailure (f, location)) -> (FailureWithMessage (message, f), location) |> TestExpectationFailure |> TestFailure
     | TestSuccess
     | TestFailure _ -> result
+    
+let by (check: IEventChecker) f =
+    f () |> ignore
+    if check.IsValid then
+        TestSuccess
+    else
+        check.FailureDescription
+        |> newFailure.With.TestValidationFailure (check.SuccessDescription, check.FullPath, check.LineNumber)
+        |> TestFailure
+    
