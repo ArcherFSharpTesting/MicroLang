@@ -112,8 +112,8 @@ type IEventChecker =
     abstract member FailureDescription: string with get
     abstract member SuccessDescription: string with get
 
-type private EventChecker (f, successDescription, failureDescription, fullPath, lineNumber) =
-    let mutable isValid = false
+type private EventChecker (initialValidity, f, successDescription, failureDescription, fullPath, lineNumber) =
+    let mutable isValid = initialValidity
     
     member _.Run () =
         isValid <- f ()
@@ -178,7 +178,7 @@ type Expect () =
             failureBuilder.With.TestValidationFailure ({ Expected = $"%A{tType}"; Actual = $"%A{value.GetType ()}" }, fullPath, lineNumber) |> TestFailure
             
     member _.ToBeTriggered (event, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        let check = EventChecker ((fun () -> true), "Event to be triggered", "Event was not triggered", fullPath, lineNumber)
+        let check = EventChecker (false, (fun () -> true), "Event to be triggered", "Event was not triggered", fullPath, lineNumber)
         event
         |> Event.add (fun _ -> check.Run ())
         
@@ -193,7 +193,7 @@ type Expect () =
         eventCheck
         
     member _.ToNotBeTriggered (event, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
-        let check = EventChecker ((fun () -> false), "Event to not be triggered", "Event was triggered", fullPath, lineNumber)
+        let check = EventChecker (true, (fun () -> false), "Event to not be triggered", "Event was triggered", fullPath, lineNumber)
         event
         |> Event.add (fun _ -> check.Run ())
         
