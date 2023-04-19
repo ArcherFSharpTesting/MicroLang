@@ -38,7 +38,7 @@ let withMessage message result =
     | TestSuccess
     | TestFailure _ -> result
     
-let by (check: IEventChecker) f =
+let by f (check: IEventChecker) =
     f () |> ignore
     if check.IsValid then
         TestSuccess
