@@ -12,7 +12,7 @@ let suite = TestContainerBuilder ()
 let random = Random ()
 
 let randomInt _ = random.Next ()
-let random1To max = random.Next (1, max) 
+let random0To max = random.Next (0, max) 
 let ignoreInt _ = randomInt ()
 let ignoreString _ = $"%d{randomInt ()}%d{randomInt ()}%d{randomInt ()}"
 
