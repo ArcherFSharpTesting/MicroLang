@@ -1,5 +1,6 @@
 ﻿module Archer.MicroLang.VerificationTypes
 
+open System
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Archer.MicroLang.Types.TypeSupport
@@ -167,6 +168,13 @@ type Expect () =
             this.NotToBeCalled (fullPath, lineNumber) |> Error
         with
         | ex -> Ok ex
+        
+    member this.ToNotThrow (f, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        try
+            f () |> ignore
+            TestSuccess
+        with
+        | ex -> ex |> TestExceptionFailure |> TestFailure
         
     member _.NotToBeCalled ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         failureBuilder.With.TestOtherExpectationFailure ("Expected not to be called but was", fullPath, lineNumber)
