@@ -15,7 +15,7 @@ let ``carry the result of the StartSetup event`` =
             
             let executor = testBuilder (expectedFailure |> Error)
             
-            let mutable result = newFailure.With.TestExecutionNotRunFailure () |> TestFailure
+            let mutable result = newFailure.With.TestExecutionShouldNotRunFailure () |> TestFailure
             
             executor.TestLifecycleEvent
             |> Event.add (fun args ->
@@ -43,7 +43,7 @@ let ``prevent the call of the test action if canceled`` =
             let mutable result = TestSuccess
             
             let testAction _ =
-                result <- newFailure.With.TestExecutionNotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.TestExecutionShouldNotRunValidationFailure () |> TestFailure
                 TestSuccess
                 
             let executor = testBuilder testAction
@@ -91,7 +91,7 @@ let ``should carry result of setup action fails`` =
             let expectedFailure = "This is an intended failure" |> newFailure.With.SetupTeardownGeneralFailure
             let setupResult = expectedFailure  |> Error
             
-            let mutable result = newFailure.With.TestExecutionNotRunFailure () |> TestFailure
+            let mutable result = newFailure.With.TestExecutionShouldNotRunFailure () |> TestFailure
             
             let executor = testBuilder setupResult
             

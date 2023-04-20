@@ -47,11 +47,17 @@ type FailureWithBuilder () =
         )
         |> TestExpectationFailure
         
-    member this.TestExecutionNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.TestExecutionShouldNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.TestOtherExpectationFailure ("Should not run", fullPath, lineNumber)
         
-    member this.TestExecutionNotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.TestExecutionShouldNotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.TestValidationFailure ("Not To Run", fullPath, lineNumber) "Was run"
+        
+    member this.TestExecutionWasNotRunFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.TestOtherExpectationFailure ("Was not run", fullPath, lineNumber)
+        
+    member this.TestExecutionWasNotRunValidationFailure ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        this.TestValidationFailure ("Was run", fullPath, lineNumber) "Was not run"
  
 type SetupTeardownFailureBuilder<'a> (resultType: SetupTeardownFailure -> 'a) =
     let withBuilder = FailureWithBuilder ()

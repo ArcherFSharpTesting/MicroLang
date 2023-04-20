@@ -49,7 +49,7 @@ let ``Should not call the test action if setup fails`` =
             let failure = "Setup Fail" |> newFailure.With.SetupTeardownGeneralFailure
             
             let testAction _ _ =
-                result <- newFailure.With.TestExecutionNotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.TestExecutionShouldNotRunValidationFailure () |> TestFailure
                 result
             
             let executor = testBuilder (Error failure) testAction 

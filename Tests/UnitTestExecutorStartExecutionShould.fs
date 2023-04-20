@@ -15,7 +15,7 @@ let ``prevent the call of the test setup if canceled`` =
             
             let setupAction =
                 (fun _ ->
-                    result <- newFailure.With.TestExecutionNotRunValidationFailure () |> TestFailure
+                    result <- newFailure.With.TestExecutionShouldNotRunValidationFailure () |> TestFailure
                     Ok ()
                 )
                 
@@ -45,7 +45,7 @@ let ``prevent the call of the test action if canceled`` =
             let mutable result = TestSuccess
             
             let testAction _ =
-                result <- newFailure.With.TestExecutionNotRunValidationFailure () |> TestFailure
+                result <- newFailure.With.TestExecutionShouldNotRunValidationFailure () |> TestFailure
                 TestSuccess
                 
             let executor = testBuilder testAction

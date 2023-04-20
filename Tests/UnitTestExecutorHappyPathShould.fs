@@ -40,7 +40,7 @@ let ``Should raise all events in correct order`` =
         
         fun executor _ ->
             let mutable cnt = 0
-            let notRun = newFailure.With.TestExecutionNotRunFailure () |> TestFailure
+            let notRun = newFailure.With.TestExecutionShouldNotRunFailure () |> TestFailure
             let mutable result = notRun
             
             let combineResult = combineResultIgnoring notRun
