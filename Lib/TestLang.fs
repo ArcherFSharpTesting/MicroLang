@@ -32,7 +32,7 @@ let reportFailures (failures: TestFailContainer list) =
                 for _y in 0..depth do
                     yield "\t"
             }
-            |> fun items -> System.String.Join ("", items)
+            |> fun items -> String.Join ("", items)
             
         let deconstruct (test: ITest) (failure: TestFailureType) =
             match failure with
@@ -112,7 +112,7 @@ let reportIgnores (ignored: TestIgnoreContainer list) =
                 for _y in 0..depth do
                     yield "\t"
             }
-            |> fun items -> System.String.Join ("", items)
+            |> fun items -> String.Join ("", items)
 
         ignored
         |> List.iter (fun ignored ->
@@ -201,11 +201,11 @@ let countIgnored ignored =
     |> countIgnored ignored
 
 let runAndReport (framework: IFramework) =
-    let startTime = System.DateTime.Now
+    let startTime = DateTime.Now
     printfn $"Started at %s{startTime.ToShortTimeString ()}"
     let results = framework.Run ()
 
-    let endTime = System.DateTime.Now
+    let endTime = DateTime.Now
     printfn $"Ended at %s{endTime.ToShortTimeString ()}"
     
     let failureCount = results.Failures |> countFailures
