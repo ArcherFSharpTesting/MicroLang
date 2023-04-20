@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module Archer.MicroLang.Lang
 
+open System
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.CoreTypes.InternalTypes.FrameworkTypes
@@ -8,7 +9,10 @@ open Archer.MicroLang.Types
 
 let suite = TestContainerBuilder ()
 
-let randomInt _ = System.Random().Next ()
+let random = Random ()
+
+let randomInt _ = random.Next ()
+let random1To max = random.Next (1, max) 
 let ignoreInt _ = randomInt ()
 let ignoreString _ = $"%d{randomInt ()}%d{randomInt ()}%d{randomInt ()}"
 
