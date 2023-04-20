@@ -176,6 +176,12 @@ type Expect () =
         with
         | ex -> ex |> TestExceptionFailure |> TestFailure
         
+    member _.ToNotThrowWithResult (f, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+        try
+            f () |> Ok
+        with
+        | ex -> ex |> TestExceptionFailure |> TestFailure |> Error
+        
     member _.NotToBeCalled ([<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         failureBuilder.With.TestOtherExpectationFailure ("Expected not to be called but was", fullPath, lineNumber)
         |> TestFailure
