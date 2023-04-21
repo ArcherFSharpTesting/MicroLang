@@ -1,5 +1,4 @@
 ﻿module Archer.MicroLang.Tests.Program
-// For more information see https://aka.ms/fsharp-console-apps
 
 open Archer.Bow
 open Archer.MicroLang.Tests
