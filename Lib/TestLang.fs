@@ -200,7 +200,7 @@ let countIgnored ignored =
     0
     |> countIgnored ignored
 
-let runAndReport (framework: IFramework) =
+let filterRunAndReport (predicate: ITest -> bool) (framework: IFramework) =
     let startTime = DateTime.Now
     printfn $"Started at %s{startTime.ToShortTimeString ()}"
     let results = framework.Run ()
@@ -228,3 +228,6 @@ let runAndReport (framework: IFramework) =
     printfn "\n"
 
     exit failureCount
+    
+let runAndReport (framework: IFramework) =
+    filterRunAndReport (fun _ -> true) framework
