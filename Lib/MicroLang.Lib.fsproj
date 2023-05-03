@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.29" />
+    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.31" />
     <PackageReference Include="whats-your-version" Version="2.1.0" />
     <PackageReference Update="FSharp.Core" Version="7.0.200" />
   </ItemGroup>

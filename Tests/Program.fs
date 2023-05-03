@@ -1,7 +1,7 @@
 ﻿module Archer.MicroLang.Tests.Program
 
-open Archer
 open Archer.Bow
+open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang.Lang
 
 let framework = bow.Framework ()
