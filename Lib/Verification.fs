@@ -12,15 +12,7 @@ let combineResultIgnoring defaultError a b =
     match a, b with
     | var, _ when var = defaultError -> b
     | _, var when var = defaultError -> a
-
-    | TestSuccess, _ -> b
-    | _, TestSuccess -> a
-    
-    | TestFailure (TestExpectationFailure (tfa, locationA)), TestFailure (TestExpectationFailure (tfb, locationB)) ->
-        let location = [locationA; locationB] |> List.min
-        (CombinationFailure (tfa, tfb), location) |> TestExpectationFailure |> TestFailure
-    | TestFailure _ as failure, _
-    | _, (TestFailure _ as failure) -> failure
+    | a, b -> a + b
     
 let andResult = combineResultIgnoring TestSuccess
 

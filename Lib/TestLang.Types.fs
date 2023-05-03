@@ -114,6 +114,8 @@ type UnitTestExecutor<'a> (parent: ITest, setup: unit -> Result<'a, SetupTeardow
                 
             | _, { SetupResult = _; TestResult = _; TeardownResult = Some (Error errorValue) } ->
                 errorValue |> TeardownExecutionFailure
+
+            | _, { SetupResult = _; TestResult = _; TeardownResult = _ } -> failwith "Should not get here"
                 
         testLifecycleEvent.Trigger (parent, TestEndExecution result)
         result

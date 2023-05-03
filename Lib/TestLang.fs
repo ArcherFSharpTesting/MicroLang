@@ -34,7 +34,7 @@ let reportFailures (failures: TestFailContainer list) =
             }
             |> fun items -> String.Join ("", items)
             
-        let deconstruct (test: ITest) (failure: TestFailureType) =
+        let rec deconstruct (test: ITest) (failure: TestFailureType) =
             match failure with
             | GeneralFailureType generalTestingFailure ->
                 match generalTestingFailure with
@@ -73,14 +73,24 @@ let reportFailures (failures: TestFailContainer list) =
                     test.Location, $"%A{ex}"
                 | TestExpectationFailure (testExpectationFailure, codeLocation) ->
                     match testExpectationFailure with
-                    | CombinationFailure (a, b) ->
-                        codeLocation, $"%A{(a, b)}"
                     | ExpectationOtherFailure message ->
                         codeLocation, message
                     | ExpectationVerificationFailure verificationInfo ->
                         codeLocation, $"VerificationFailure (%A{verificationInfo})"
                     | FailureWithMessage (message, testFailure) ->
                         codeLocation, $"%A{testFailure}  : (%s{message})"
+                | CombinationFailure(failureA, failureB) ->
+                    let getFailure value =
+                        match value with
+                        | f, None ->
+                            test.Location, deconstruct test (TestRunFailureType f)
+                        | f, Some location -> 
+                            location, deconstruct test (TestRunFailureType f)
+                    
+                    let a = getFailure failureA
+                    let b = getFailure failureB
+                        
+                    test.Location, $"CombinationFailure (%A{a}, %A{b})"
             
         failures
         |> List.iter (fun failure ->
