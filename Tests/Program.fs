@@ -4,10 +4,10 @@ open Archer.Bow
 open Archer.CoreTypes.InternalTypes
 open Archer.MicroLang.Lang
 
-let framework = bow.Framework ()
+let runner = bow.Runner ()
 
 // These tests test the testing environment used to test the framework
-framework
+runner
 |> addMany [
     ``UnitTest should``.``Test Cases``
     ``UnitTestExecutor happy path``.``Test Cases``

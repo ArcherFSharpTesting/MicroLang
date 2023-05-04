@@ -8,7 +8,7 @@ open Archer.MicroLang
 
 let getEmptyEnvironment (test: ITestExecutor) =
     {
-        RunnerName = "No Framework"
+        RunnerName = "No Runner"
         RunnerVersion = Version "0.0.0.0"
         TestInfo = test.Parent 
     }
