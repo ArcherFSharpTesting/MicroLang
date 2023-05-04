@@ -24,9 +24,9 @@ type FailureWithBuilder () =
     member _.TestValidationFailure<'a> (expected: 'a, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         let validate (actual: 'a) =
             (
-                {
-                    Expected = $"%A{expected}"
-                    Actual = $"%A{actual}" 
+                { new IVerificationInfo with
+                    member _.Expected with get () = $"%A{expected}"
+                    member _.Actual with get () = $"%A{actual}" 
                 } |> ExpectationVerificationFailure,
                 buildLocation fullPath lineNumber
             )
@@ -138,7 +138,12 @@ type Expect () =
         let check actual =
             if actual = expected then TestSuccess
             else
-                failureBuilder.With.TestValidationFailure ({ Expected = $"%A{expected}"; Actual = $"%A{actual}" }, fullPath, lineNumber)
+                let verificationInfo =
+                    { new IVerificationInfo with
+                        member _.Expected with get () = $"%A{expected}"
+                        member _.Actual with get () = $"%A{actual}"
+                    }
+                failureBuilder.With.TestValidationFailure (verificationInfo, fullPath, lineNumber)
                 |> TestFailure
                 
         check
@@ -195,7 +200,12 @@ type Expect () =
         if tType.IsInstanceOfType value then
             TestSuccess
         else
-            failureBuilder.With.TestValidationFailure ({ Expected = $"%A{tType}"; Actual = $"%A{value.GetType ()}" }, fullPath, lineNumber) |> TestFailure
+            let verificationInfo =
+                { new IVerificationInfo with
+                    member _.Expected with get () = $"%A{tType}"
+                    member _.Actual with get () = $"%A{value.GetType ()}"
+                }
+            failureBuilder.With.TestValidationFailure (verificationInfo, fullPath, lineNumber) |> TestFailure
             
     member _.ToBeTriggered (event, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         let check = EventChecker (false, (fun () -> true), "Event to be triggered", "Event was not triggered", fullPath, lineNumber)

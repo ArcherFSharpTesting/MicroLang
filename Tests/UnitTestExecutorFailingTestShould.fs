@@ -10,7 +10,12 @@ let ``Should return failure if the test action returns failure`` =
         SetupPart setupExecutorFromResult,
         
         fun testCreator _ ->
-            let expectedFailure = { Actual = "Things don't add up"; Expected = "nice and tidy" } |> newFailure.With.TestValidationFailure |> TestFailure
+            let expectedFailure =
+                { new IVerificationInfo with
+                    member _.Actual with get () = "Things don't add up"
+                    member _.Expected with get () = "nice and tidy"
+                } |> newFailure.With.TestValidationFailure |> TestFailure
+                
             let expectedResult = expectedFailure |> TestExecutionResult
             
             let execution = testCreator expectedFailure 
