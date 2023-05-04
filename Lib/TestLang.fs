@@ -4,7 +4,7 @@ module Archer.MicroLang.Lang
 open System
 open Archer
 open Archer.CoreTypes.InternalTypes
-open Archer.CoreTypes.InternalTypes.FrameworkTypes
+open Archer.CoreTypes.InternalTypes.RunnerTypes
 open Archer.MicroLang.Types
 
 let suite = TestContainerBuilder ()
@@ -210,7 +210,7 @@ let countIgnored ignored =
     0
     |> countIgnored ignored
 
-let filterRunAndReport (predicate: ITest -> bool) (framework: IFramework) =
+let filterRunAndReport (predicate: ITest -> bool) (framework: IRunner) =
     let startTime = DateTime.Now
     printfn $"Started at %s{startTime.ToShortTimeString ()}"
     let results = framework.Run ()
@@ -239,5 +239,5 @@ let filterRunAndReport (predicate: ITest -> bool) (framework: IFramework) =
 
     exit failureCount
     
-let runAndReport (framework: IFramework) =
+let runAndReport (framework: IRunner) =
     filterRunAndReport (fun _ -> true) framework

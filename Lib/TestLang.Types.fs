@@ -41,7 +41,7 @@ type ExecutionAccumulator<'a> = {
     TeardownResult: Result<unit, SetupTeardownFailure> option
 }
 
-type UnitTestExecutor<'a> (parent: ITest, setup: unit -> Result<'a, SetupTeardownFailure>, test: 'a -> FrameworkEnvironment -> TestResult, tearDown: Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>) =
+type UnitTestExecutor<'a> (parent: ITest, setup: unit -> Result<'a, SetupTeardownFailure>, test: 'a -> RunnerEnvironment -> TestResult, tearDown: Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>) =
     let testLifecycleEvent = Event<TestExecutionDelegate, TestEventLifecycle> ()
     
     let startExecution (cancelEventArgs: CancelEventArgs) (acc: ExecutionAccumulator<'a>) =
@@ -147,7 +147,7 @@ type UnitTestExecutor<'a> (parent: ITest, setup: unit -> Result<'a, SetupTeardow
         [<CLIEvent>]
         member this.TestLifecycleEvent = testLifecycleEvent.Publish
             
-type UnitTest<'a> (containerPath: string, containerName: string, testName: string, tags: TestTag seq, test: 'a -> FrameworkEnvironment -> TestResult, setup: unit -> Result<'a, SetupTeardownFailure>, tearDown: Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>, location: CodeLocation) =
+type UnitTest<'a> (containerPath: string, containerName: string, testName: string, tags: TestTag seq, test: 'a -> RunnerEnvironment -> TestResult, setup: unit -> Result<'a, SetupTeardownFailure>, tearDown: Result<'a, SetupTeardownFailure> -> TestResult option -> Result<unit, SetupTeardownFailure>, location: CodeLocation) =
     override this.ToString () =
         let test = this :> ITest
         [
@@ -180,60 +180,60 @@ type UnitTest<'a> (containerPath: string, containerName: string, testName: strin
 type TestBuilder (containerPath: string, containerName: string) =
     let mutable tests : ITest list = []
     
-    member _.Test<'a> (tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member _.Test<'a> (tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         match setup, tearDown, tags with
         | SetupPart setup, TeardownPart teardown, TestTagsPart testTags ->
             let test = UnitTest (containerPath, containerName, testName, testTags, testAction, setup, teardown, buildLocation fullPath lineNumber) :> ITest
             tests <- test::tests
             test
     
-    member _.Test<'a> (testName: string, tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member _.Test<'a> (testName: string, tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         match setup, tearDown, tags with
         | SetupPart setup, TeardownPart teardown, TestTagsPart testTags ->
             let test = UnitTest (containerPath, containerName, testName, testTags, testAction, setup, teardown, buildLocation fullPath lineNumber) :> ITest
             tests <- test::tests
             test
             
-    member this.Test<'a> (setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test<'a> (setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (TestTagsPart [], setup, testAction, tearDown, testName, fullPath, lineNumber)
             
-    member this.Test<'a> (testName: string, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test<'a> (testName: string, setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<'a>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (TestTagsPart [], setup, testAction, tearDown, testName, fullPath, lineNumber)
         
-    member this.Test<'a> (tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test<'a> (tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (tags, setup, testAction, TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
         
-    member this.Test<'a> (testName: string, tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test<'a> (testName: string, tags: TagPart, setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (tags, setup, testAction, TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
         
-    member this.Test<'a> (setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test<'a> (setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (setup, testAction, TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
         
-    member this.Test<'a> (testName: string, setup: SetupPart<'a>, testAction: 'a -> FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test<'a> (testName: string, setup: SetupPart<'a>, testAction: 'a -> RunnerEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (setup, testAction, TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
         
-    member this.Test (tags: TagPart, testAction: unit -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (tags: TagPart, testAction: unit -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (tags, SetupPart (fun _ -> Ok ()), testAction, tearDown, testName, fullPath, lineNumber)
         
-    member this.Test (testName: string, tags: TagPart, testAction: unit -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (testName: string, tags: TagPart, testAction: unit -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (tags, SetupPart (fun _ -> Ok ()), testAction, tearDown, testName, fullPath, lineNumber)
         
-    member this.Test (testAction: unit -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (testAction: unit -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (TestTagsPart [], SetupPart (fun _ -> Ok ()), testAction, tearDown, testName, fullPath, lineNumber)
         
-    member this.Test (testName: string, testAction: unit -> FrameworkEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (testName: string, testAction: unit -> RunnerEnvironment -> TestResult, tearDown: TeardownPart<unit>, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (TestTagsPart [], SetupPart (fun _ -> Ok ()), testAction, tearDown, testName, fullPath, lineNumber)
         
-    member this.Test (tags: TagPart, testAction: unit -> FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (tags: TagPart, testAction: unit -> RunnerEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (tags, SetupPart (fun _ -> Ok ()), testAction, TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
         
-    member this.Test (testName: string, tags: TagPart, testAction: unit -> FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (testName: string, tags: TagPart, testAction: unit -> RunnerEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (tags, SetupPart (fun _ -> Ok ()), testAction, TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
         
-    member this.Test (testAction: FrameworkEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (testAction: RunnerEnvironment -> TestResult, [<CallerMemberName; Optional; DefaultParameterValue("")>] testName: string, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (TestTagsPart [], SetupPart (fun _ -> Ok ()), (fun _ -> testAction), TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
         
-    member this.Test (testName: string, testAction: FrameworkEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
+    member this.Test (testName: string, testAction: RunnerEnvironment -> TestResult, [<CallerFilePath; Optional; DefaultParameterValue("")>] fullPath: string, [<CallerLineNumber; Optional; DefaultParameterValue(-1)>]lineNumber: int) =
         this.Test (TestTagsPart [], SetupPart (fun _ -> Ok ()), (fun _ -> testAction), TeardownPart (fun _ _ -> Ok ()), testName, fullPath, lineNumber)
     
     member _.Tests with get () = tests
