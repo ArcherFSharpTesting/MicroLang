@@ -209,11 +209,14 @@ let countIgnored ignored =
             |> countIgnored tail
     0
     |> countIgnored ignored
-
-let filterRunAndReport (predicate: ITest -> bool) (runner: IRunner) =
+    
+let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IRunner) =
     let startTime = DateTime.Now
     printfn $"Started at %s{startTime.ToShortTimeString ()}"
-    let results = runner.Run predicate
+    let results =
+        match filter with
+        | None -> runner.Run ()
+        | Some value -> runner.Run value
 
     let endTime = DateTime.Now
     printfn $"Ended at %s{endTime.ToShortTimeString ()}"
@@ -238,6 +241,8 @@ let filterRunAndReport (predicate: ITest -> bool) (runner: IRunner) =
     printfn "\n"
 
     exit failureCount
-    
+
+let filterRunAndReport (filter: ITest list -> ITest list) (runner: IRunner) =
+    maybeFilterAndReport (Some filter) runner
 let runAndReport (runner: IRunner) =
-    filterRunAndReport (fun _ -> true) runner
+    maybeFilterAndReport None runner
