@@ -19,11 +19,10 @@
     <Compile Include="TestLang.fs" />
     <Compile Include="VerificationTypes.fs" />
     <Compile Include="Verification.fs" />
-    <Content Include="Directory.Build.props" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.40" />
+    <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.41" />
     <PackageReference Include="whats-your-version" Version="2.1.0" />
     <PackageReference Update="FSharp.Core" Version="7.0.300" />
   </ItemGroup>
