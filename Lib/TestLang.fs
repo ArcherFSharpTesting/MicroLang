@@ -211,15 +211,13 @@ let countIgnored ignored =
     |> countIgnored ignored
     
 let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IRunner) =
-    let startTime = DateTime.Now
-    printfn $"Started at %s{startTime.ToShortTimeString ()}"
+    printfn $"Started at %s{DateTime.Now.ToShortTimeString ()}"
     let results =
         match filter with
         | None -> runner.Run ()
         | Some value -> runner.Run value
 
-    let endTime = DateTime.Now
-    printfn $"Ended at %s{endTime.ToShortTimeString ()}"
+    printfn $"Ended at %s{DateTime.Now.ToShortTimeString ()}"
     
     let failureCount = results.Failures |> countFailures
     let successCount = results.Successes |> countSuccesses
@@ -235,7 +233,7 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
     results.Ignored
     |> reportIgnores
 
-    printfn $"\n\nTotal Time: %A{endTime - startTime}"
+    printfn $"\n\nTotal Time: %A{results.TotalTime}"
     printfn $"\nSeed: %d{results.Seed}"
 
     printfn "\n"
