@@ -227,7 +227,7 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
         
     printfn $"\nTests Passing: %d{successCount}, Ignored: %d{ignoredCount} Failing: %d{failureCount}\n"
 
-    let indenter = IndentTransformer 0
+    let indenter = IndentTransformer (0, TwoSpaces)
     
     results.Failures
     |> defaultTestFailContainerAllTransformer indenter
