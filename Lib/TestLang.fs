@@ -5,6 +5,8 @@ open System
 open Archer
 open Archer.CoreTypes.InternalTypes
 open Archer.CoreTypes.InternalTypes.RunnerTypes
+open Archer.Logger.Indent
+open Archer.Logger.TestFailContainerTransformer
 open Archer.MicroLang.Types
 
 let suite = TestContainerBuilder ()
@@ -225,8 +227,11 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
         
     printfn $"\nTests Passing: %d{successCount}, Ignored: %d{ignoredCount} Failing: %d{failureCount}\n"
 
+    let indenter = IndentTransformer 0
+    
     results.Failures
-    |> reportFailures
+    |> defaultTestFailContainerAllTransformer indenter
+    |> printfn "%s"
 
     printfn ""
 
