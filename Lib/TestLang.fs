@@ -7,6 +7,7 @@ open Archer.CoreTypes.InternalTypes
 open Archer.CoreTypes.InternalTypes.RunnerTypes
 open Archer.Logger.Indent
 open Archer.Logger.TestFailContainerTransformer
+open Archer.Logger.TestIgnoreContainerTransformer
 open Archer.MicroLang.Types
 
 let suite = TestContainerBuilder ()
@@ -27,132 +28,6 @@ let successfulEnvironmentTest _ _ = TestSuccess
 
 let successfulTeardown _ _ = Ok ()
 
-let reportFailures (failures: TestFailContainer list) =
-    let rec reportFailures (failures: TestFailContainer list) depth =
-        let indent =
-            seq {
-                for _y in 0..depth do
-                    yield "\t"
-            }
-            |> fun items -> String.Join ("", items)
-            
-        let rec deconstruct (test: ITest) (failure: TestFailureType) =
-            match failure with
-            | GeneralFailureType generalTestingFailure ->
-                match generalTestingFailure with
-                | GeneralFailure message ->
-                    test.Location, $"GeneralFailure (%s{message})"
-                | GeneralCancelFailure ->
-                    test.Location, $"GeneralCancelFailure"
-                | GeneralExceptionFailure ex ->
-                    test.Location, $"%A{ex}"
-            | SetupFailureType setupFailure ->
-                match setupFailure with
-                | GeneralSetupTeardownFailure (message, codeLocation) ->
-                    codeLocation, $"GeneralSetupFailure (%s{message})"
-                | SetupTeardownCanceledFailure ->
-                    test.Location, "SetupCancelFailure"
-                | SetupTeardownExceptionFailure ex ->
-                    test.Location, $"%A{ex}"
-            | TeardownFailureType teardownFailure ->
-                match teardownFailure with
-                | GeneralSetupTeardownFailure (message, codeLocation) ->
-                    codeLocation, $"GeneralTeardownFailure (%s{message})"
-                | SetupTeardownCanceledFailure ->
-                    test.Location, "TearDownCanceledFailure"
-                | SetupTeardownExceptionFailure ex ->
-                    test.Location, $"%A{ex}"
-            | TestRunFailureType testFailure ->
-                match testFailure with
-                | TestIgnored (stringOption, codeLocation) ->
-                    let message =
-                        match stringOption with
-                        | Some value -> value
-                        | None -> ""
-                        
-                    codeLocation, $"Ignored (%s{message})"
-                | TestExceptionFailure ex ->
-                    test.Location, $"%A{ex}"
-                | TestExpectationFailure (testExpectationFailure, codeLocation) ->
-                    match testExpectationFailure with
-                    | ExpectationOtherFailure message ->
-                        codeLocation, message
-                    | ExpectationVerificationFailure verificationInfo ->
-                        codeLocation, $"VerificationFailure (%A{verificationInfo})"
-                    | FailureWithMessage (message, testFailure) ->
-                        codeLocation, $"%A{testFailure}  : (%s{message})"
-                | CombinationFailure(failureA, failureB) ->
-                    let getFailure value =
-                        match value with
-                        | f, None ->
-                            test.Location, deconstruct test (TestRunFailureType f)
-                        | f, Some location -> 
-                            location, deconstruct test (TestRunFailureType f)
-                    
-                    let a = getFailure failureA
-                    let b = getFailure failureB
-                        
-                    test.Location, $"CombinationFailure (%A{a}, %A{b})"
-            
-        failures
-        |> List.iter (fun failure ->
-            match failure with
-            | EmptyFailures -> ()
-            | FailedTests tests ->
-                tests
-                |> List.iter (fun (result, test) ->
-                    let location, failure =
-                        deconstruct test result
-                        
-                    printfn $"%s{indent}----------------------"
-                    printfn $"%s{indent}%s{test.TestName}"
-                    printfn $"%s{indent}\t%A{failure}"
-                    printfn ""
-                    printfn $"%s{indent}%s{System.IO.Path.Combine (location.FilePath, location.FileName)}(%d{location.LineNumber})"
-                )
-            | FailContainer(name, testFailContainers) ->
-                printfn $"%s{indent}%s{name}"
-                reportFailures testFailContainers (depth + 1)
-        )
-    
-    reportFailures failures 0
-    
-let reportIgnores (ignored: TestIgnoreContainer list) =
-    let rec reportIgnores (ignored: TestIgnoreContainer list) depth =
-        let indent =
-            seq {
-                for _y in 0..depth do
-                    yield "\t"
-            }
-            |> fun items -> String.Join ("", items)
-
-        ignored
-        |> List.iter (fun ignored ->
-            match ignored with
-            | EmptyIgnore -> ()
-            | IgnoredTests tests ->
-                tests
-                |> List.iter (fun (message, location, test) ->
-                    let msg =
-                        match message with
-                        | Some s -> s
-                        | None -> ""
-                        
-                    printfn $"%s{indent}----------------------"
-                    printfn $"%s{indent}%s{test.TestName}"
-                    printfn $"%s{indent}\tIgnored %s{msg}"
-                    printfn ""
-                    printfn $"%s{indent}%s{System.IO.Path.Combine (location.FilePath, location.FileName)}(%d{location.LineNumber})"
-                )
-            | IgnoreContainer(name, testIgnoreContainers) ->
-                printfn $"%s{indent}%s{name}"
-                (depth + 1)
-                |> reportIgnores testIgnoreContainers
-        )
-        
-    0
-    |> reportIgnores ignored
-    
 let countFailures failures =
     let rec countFailures failures (acc: int) =
         match failures with
@@ -236,7 +111,8 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
     printfn ""
 
     results.Ignored
-    |> reportIgnores
+    |> defaultAllTestIgnoreContainerTransformer indenter
+    |> printf "%s"
 
     printfn $"\n\nTotal Time: %A{results.TotalTime}"
     printfn $"\nSeed: %d{results.Seed}"

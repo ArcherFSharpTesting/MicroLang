@@ -24,9 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Archer.Bow.Lib" Version="0.0.9.36" />
+    <PackageReference Include="Archer.Bow.Lib" Version="0.0.9.37" />
     <PackageReference Include="Archer.CoreTypes.Lib" Version="0.0.13.42" />
-    <PackageReference Include="Archer.Logger.Lib" Version="0.0.0.3" />
+    <PackageReference Include="Archer.Logger.Lib" Version="0.0.0.4" />
     <PackageReference Include="whats-your-version" Version="2.1.0" />
     <PackageReference Update="FSharp.Core" Version="7.0.300" />
   </ItemGroup>
