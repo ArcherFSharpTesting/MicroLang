@@ -114,7 +114,8 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
     |> defaultAllTestIgnoreContainerTransformer indenter
     |> printf "%s"
         
-    printfn $"\nTests Passing: %d{successCount}, Ignored: %d{ignoredCount} Failing: %d{failureCount}\n"
+    printfn ""
+    printfn $"\nTests Passing: %d{successCount}, Ignored: %d{ignoredCount} Failing: %d{failureCount}"
 
     printfn $"\nTotal Time: %A{results.TotalTime}"
     printfn $"\nSeed: %d{results.Seed}"
