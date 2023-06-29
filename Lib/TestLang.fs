@@ -99,8 +99,8 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
     let failureCount = results.Failures |> countFailures
     let successCount = results.Successes |> countSuccesses
     let ignoredCount = results.Ignored |> countIgnored
-        
-    printfn $"\nTests Passing: %d{successCount}, Ignored: %d{ignoredCount} Failing: %d{failureCount}\n"
+    
+    printfn ""
 
     let indenter = IndentTransformer (0, TwoSpaces)
     
@@ -113,8 +113,10 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
     results.Ignored
     |> defaultAllTestIgnoreContainerTransformer indenter
     |> printf "%s"
+        
+    printfn $"\nTests Passing: %d{successCount}, Ignored: %d{ignoredCount} Failing: %d{failureCount}\n"
 
-    printfn $"\n\nTotal Time: %A{results.TotalTime}"
+    printfn $"\nTotal Time: %A{results.TotalTime}"
     printfn $"\nSeed: %d{results.Seed}"
 
     printfn "\n"
