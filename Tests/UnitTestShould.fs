@@ -1,6 +1,6 @@
 module Archer.MicroLang.Tests.``UnitTest should``
 
-open Archer.CoreTypes.InternalTypes
+open Archer.Types.InternalTypes
 
 open Archer
 open Archer.MicroLang

@@ -4,7 +4,7 @@ open Archer.Runner
 open Archer.Types.InternalTypes
 open Archer.MicroLang.Lang
 
-let runner = bow.Runner ()
+let runner = runnerFactory.Runner ()
 
 // These tests test the testing environment used to test the framework
 runner
