@@ -3,11 +3,11 @@ module Archer.MicroLang.Lang
 
 open System
 open Archer
-open Archer.CoreTypes.InternalTypes
-open Archer.CoreTypes.InternalTypes.RunnerTypes
-open Archer.Logger.Indent
-open Archer.Logger.TestFailContainerTransformer
-open Archer.Logger.TestIgnoreContainerTransformer
+open Archer.Types.InternalTypes
+open Archer.Types.InternalTypes.RunnerTypes
+open Archer.Reporting.Indent
+open Archer.Reporting.TestFailContainerTransformer
+open Archer.Reporting.TestIgnoreContainerTransformer
 open Archer.MicroLang.Types
 
 let suite = TestContainerBuilder ()

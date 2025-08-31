@@ -1,7 +1,7 @@
 ﻿module Archer.MicroLang.Tests.Program
 
-open Archer.Bow
-open Archer.CoreTypes.InternalTypes
+open Archer.Runner
+open Archer.Types.InternalTypes
 open Archer.MicroLang.Lang
 
 let runner = bow.Runner ()

@@ -1,6 +1,6 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor EndSetup should``
 
-open Archer.CoreTypes.InternalTypes
+open Archer.Types.InternalTypes
 open Archer.MicroLang
 open Archer
 open Microsoft.FSharp.Control

@@ -3,7 +3,7 @@ module Archer.MicroLang.Tests.TestHelpers
 
 open System
 open Archer
-open Archer.CoreTypes.InternalTypes
+open Archer.Types.InternalTypes
 open Archer.MicroLang
 
 let getEmptyEnvironment (test: ITestExecutor) =

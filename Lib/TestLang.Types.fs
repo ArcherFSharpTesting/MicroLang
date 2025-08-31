@@ -6,7 +6,7 @@ open System.Diagnostics
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open Archer
-open Archer.CoreTypes.InternalTypes
+open Archer.Types.InternalTypes
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
 open Archer.MicroLang

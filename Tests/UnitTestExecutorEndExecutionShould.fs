@@ -1,7 +1,7 @@
 module Archer.MicroLang.Tests.``UnitTestExecutor EndExecution should``
     
 open Archer
-open Archer.CoreTypes.InternalTypes
+open Archer.Types.InternalTypes
 open Archer.MicroLang
 
 let private container = suite.Container ()
