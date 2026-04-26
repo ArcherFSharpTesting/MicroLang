@@ -115,15 +115,15 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
     |> printf "%s\n"
         
     printfn ""
-    printf "\nTests Passing: "
+    printf "\nTests "
     if successCount > 0 then
         Console.ForegroundColor <- ConsoleColor.Green
-    printf $"%d{successCount}"
+    printf $"Passing: %d{successCount}"
     Console.ResetColor ()
-    printf $", Ignored: %d{ignoredCount} Failing: "
+    printf $", Ignored: %d{ignoredCount} "
     if failureCount > 0 then
         Console.ForegroundColor <- ConsoleColor.Red
-    printf $"%d{failureCount}"
+    printf $"Failing: %d{failureCount}"
     Console.ResetColor ()
     printfn ""
 
