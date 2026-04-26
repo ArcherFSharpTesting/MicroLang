@@ -106,16 +106,26 @@ let maybeFilterAndReport (filter: (ITest list -> ITest list) option) (runner: IR
     
     results.Failures
     |> defaultTestFailContainerAllTransformer indenter
-    |> printfn "%s"
+    |> printfn "%s\n"
 
     printfn ""
 
     results.Ignored
     |> defaultAllTestIgnoreContainerTransformer indenter
-    |> printf "%s"
+    |> printf "%s\n"
         
     printfn ""
-    printfn $"\nTests Passing: %d{successCount}, Ignored: %d{ignoredCount} Failing: %d{failureCount}"
+    printf "\nTests Passing: "
+    if successCount > 0 then
+        Console.ForegroundColor <- ConsoleColor.Green
+    printf $"%d{successCount}"
+    Console.ResetColor ()
+    printf $", Ignored: %d{ignoredCount} Failing: "
+    if failureCount > 0 then
+        Console.ForegroundColor <- ConsoleColor.Red
+    printf $"%d{failureCount}"
+    Console.ResetColor ()
+    printfn ""
 
     printfn $"\nTotal Time: %A{results.TotalTime}"
     printfn $"\nSeed: %d{results.Seed}"
